@@ -15,7 +15,7 @@ if (-not (Test-Path -LiteralPath $backendHelperPath)) {
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
 if ([string]::IsNullOrWhiteSpace($ArtifactRoot)) {
-  $ArtifactRoot = Join-Path $repoRoot '.codex\claude-delegate'
+  $ArtifactRoot = Join-Path $repoRoot '.codex\codex_with_cc\claude-delegate'
 }
 $resolvedArtifactRoot = [System.IO.Path]::GetFullPath($ArtifactRoot)
 

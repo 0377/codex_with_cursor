@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
 if ([string]::IsNullOrWhiteSpace($ValidationRoot)) {
-  $ValidationRoot = Join-Path $repoRoot '.codex\claude-delegate-validation'
+  $ValidationRoot = Join-Path $repoRoot '.codex\codex_with_cc\claude-delegate-validation'
 }
 if ([string]::IsNullOrWhiteSpace($Name)) {
   $Name = '{0}-real-chain' -f (Get-Date -Format 'yyyyMMdd-HHmmss')
@@ -49,7 +49,7 @@ $taskSpecs = @(
     FileName = 'parallel-artifact-audit.md'
     SessionMode = 'ParallelPool'
     SessionFlags = '-SessionMode ParallelPool -AllowParallel'
-    Scope = "docs/codex_with_cc/windows_scripts/verify_delegate_artifacts.ps1`ndocs/codex_with_cc/windows_scripts/verify_delegate_chain.ps1`n.codex/claude-delegate"
+    Scope = "docs/codex_with_cc/windows_scripts/verify_delegate_artifacts.ps1`ndocs/codex_with_cc/windows_scripts/verify_delegate_chain.ps1`n.codex/codex_with_cc/claude-delegate"
     Tests = "pwsh -NoProfile -File .\docs\codex_with_cc\windows_scripts\verify_delegate_artifacts.ps1 -RunId <parallel-a-run-id> -ArtifactRoot '$artifactRoot'"
     Task = @"
 只读验证任务：审查新 schema delegate artifacts 与 verify_delegate_artifacts.ps1 的契约要求。
@@ -64,7 +64,7 @@ $taskSpecs = @(
     FileName = 'parallel-stream-audit.md'
     SessionMode = 'ParallelPool'
     SessionFlags = '-SessionMode ParallelPool -AllowParallel'
-    Scope = "docs/codex_with_cc/windows_scripts/claude_delegate_backend_helpers.ps1`n.codex/claude-delegate"
+    Scope = "docs/codex_with_cc/windows_scripts/claude_delegate_backend_helpers.ps1`n.codex/codex_with_cc/claude-delegate"
     Tests = "pwsh -NoProfile -File .\docs\codex_with_cc\windows_scripts\verify_delegate_artifacts.ps1 -RunId <parallel-b-run-id> -ArtifactRoot '$artifactRoot'"
     Task = @"
 只读验证任务：审查 claude_delegate_backend_helpers.ps1 的 stream capture、retry decision 与 trace/rawStream 行为。

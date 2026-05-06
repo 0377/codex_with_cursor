@@ -12,7 +12,9 @@ try {
   $verifyScriptPath = Join-Path $PSScriptRoot 'verify_delegate_artifacts.ps1'
   $verifyChainScriptPath = Join-Path $PSScriptRoot 'verify_delegate_chain.ps1'
   $realChainValidationScriptPath = Join-Path $PSScriptRoot 'run_real_delegate_chain_validation.ps1'
+  $delegateScriptPath = Join-Path $PSScriptRoot 'delegate_to_claude.ps1'
 
+  Assert-True -Condition (Test-Path -LiteralPath $delegateScriptPath) -Name 'delegate-script-exists'
   Assert-True -Condition (Test-Path -LiteralPath $backendHelperPath) -Name 'backend-helper-exists'
   Assert-True -Condition (Test-Path -LiteralPath $sessionPoolHelperPath) -Name 'session-pool-helper-exists'
   Assert-True -Condition (Test-Path -LiteralPath $verifyScriptPath) -Name 'verify-script-exists'
@@ -30,6 +32,13 @@ try {
   Assert-True -Condition ($null -ne (Get-Command Get-ClaudeDelegateOutputResolution -ErrorAction SilentlyContinue)) -Name 'backend-helper-exports-output-resolution'
   Assert-True -Condition ($null -ne (Get-Command Convert-ClaudeDelegateUnstructuredFinalText -ErrorAction SilentlyContinue)) -Name 'backend-helper-exports-unstructured-final-text-normalizer'
   Assert-True -Condition ($null -ne (Get-Command Reset-ClaudeSessionLeaseForFreshSession -ErrorAction SilentlyContinue)) -Name 'session-pool-exports-fresh-reset'
+
+  $delegateScriptText = Get-Content -LiteralPath $delegateScriptPath -Raw
+  $verifyScriptText = Get-Content -LiteralPath $verifyScriptPath -Raw
+  $realChainValidationScriptText = Get-Content -LiteralPath $realChainValidationScriptPath -Raw
+  Assert-Contains -Text $delegateScriptText -Needle ".codex\codex_with_cc\claude-delegate" -Name 'delegate-default-artifacts-live-under-codex-with-cc'
+  Assert-Contains -Text $verifyScriptText -Needle ".codex\codex_with_cc\claude-delegate" -Name 'artifact-verifier-default-root-lives-under-codex-with-cc'
+  Assert-Contains -Text $realChainValidationScriptText -Needle ".codex\codex_with_cc\claude-delegate-validation" -Name 'real-chain-validation-default-root-lives-under-codex-with-cc'
 
   $missingChildThreadMarker = Invoke-DelegateWorkerScript -ArgumentList @(
     '-Task', 'marker rejection probe',
@@ -56,9 +65,11 @@ try {
   }
   $dryRunConfig = Get-Content -LiteralPath ((Get-ChildItem -LiteralPath $dryRunArtifactRoot -Filter 'config_*.json' | Select-Object -First 1).FullName) -Raw | ConvertFrom-Json
   $dryRunStatus = Get-Content -LiteralPath ((Get-ChildItem -LiteralPath $dryRunArtifactRoot -Filter 'status_*.json' | Select-Object -First 1).FullName) -Raw | ConvertFrom-Json
+  $dryRunPrompt = Get-Content -LiteralPath ([string]$dryRunConfig.promptPath) -Raw
   Assert-True -Condition (-not ($dryRunConfig.PSObject.Properties.Name -contains 'effort')) -Name 'dry-run-config-omits-effort'
   Assert-Equal -Actual ([int]$dryRunConfig.maxRetryCount) -Expected 7 -Name 'dry-run-config-records-max-retry-count'
   Assert-Equal -Actual ([int]$dryRunStatus.maxRetryCount) -Expected 7 -Name 'dry-run-status-records-max-retry-count'
+  Assert-True -Condition ($dryRunPrompt.Contains('Follow all applicable project-defined skills and workflow skills before implementing or changing behavior, especially Codex project skills under .codex.')) -Name 'dry-run-prompt-requires-codex-project-skills'
 
   $fakeClaudeBin = Join-Path $tempRoot 'fake-claude-bin'
   New-Item -ItemType Directory -Path $fakeClaudeBin -Force | Out-Null

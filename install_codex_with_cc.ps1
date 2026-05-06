@@ -81,14 +81,14 @@ function Update-GitIgnore {
     [Parameter(Mandatory = $true)][string]$Path
   )
 
-  $entry = '.codex/'
+  $entry = '.codex/codex_with_cc'
   if (Test-Path -LiteralPath $Path) {
     $text = Get-Content -LiteralPath $Path -Raw
     $lines = @($text -split "\r?\n")
     $hasCodexIgnore = $false
     foreach ($line in $lines) {
       $normalizedLine = $line.Trim()
-      if ($normalizedLine -eq '.codex' -or $normalizedLine -eq $entry) {
+      if ($normalizedLine -eq $entry -or $normalizedLine -eq '.codex/codex_with_cc/') {
         $hasCodexIgnore = $true
         break
       }

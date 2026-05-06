@@ -38,6 +38,7 @@
 - 这套工作流默认是独立层，不需要为了当前项目再发明一份特化版安装文档。
 - 一旦目标项目接入这套工作流，后续凡是需要子代理/子线程继续执行的任务，都必须强制走本仓库定义的自定义委派链路：`Codex 主线程 -> Codex 子代理 -> docs/codex_with_cc/windows_scripts/delegate_to_claude.* -> Claude Code CLI`。
 - 不要把 Codex 自带的默认子代理工作流、宿主环境内置代理流程，或者“直接让当前 AI 自己继续开子代理干活”当作这套链路的等价替代。
+- 如果 Codex 沙箱或代跑环境无法执行同一委派命令，Codex 应改由受信任本机终端运行同一命令，并保留相同的 `CODEX_CLAUDE_CHILD_THREAD=1`、`TaskFile`、Session 参数、ArtifactRoot 和权限参数。
 - 不要追问“要保留上游原样接入，还是顺手按当前项目定制”这类范围选择题。
 - 如果用户没有明确提出项目定制诉求，就保持上游文件原样接入，再在最终汇报里说明哪些验证受当前平台或本机环境限制。
 - Windows 目标项目不要安装 `macos_scripts`；macOS 目标项目不要安装 `windows_scripts`。
@@ -60,7 +61,9 @@
 4. 真正的 Claude Code 委派必须由 Codex 子代理执行。
 5. 只要任务需要进入子代理执行层，就必须使用本工作流提供的自定义委派链路，不要退回 Codex 默认子代理工作流充当执行层。
 6. 子代理调用委派脚本前必须设置 `CODEX_CLAUDE_CHILD_THREAD=1`。
-7. 能验证就验证，不能验证要说明阻塞原因。
+7. 如果 Codex 沙箱不能承载同一委派命令，允许使用受信任本机终端执行完全相同的命令；这只是执行位置 fallback，不允许改命令、绕过委派脚本或直接调用 `claude`。
+8. Claude Code worker 必须读取并遵守目标项目 `.codex` 下约定的 skills、技能文档和工作流要求。
+9. 能验证就验证，不能验证要说明阻塞原因。
 
 ## 推荐安装流程
 
@@ -84,7 +87,7 @@ docs/codex_with_cc
 ```
 
 安装脚本还应确保 `.codex/codex_with_cc/tasks` 存在，用于放委派任务文件；实际任务文件应按 `.codex/codex_with_cc/tasks/<yyyyMMdd>/<HHmmssfff>-<short-id>-<task-file>.md` 创建，避免同一天多个会话或多个子代理任务使用固定文件名互相覆盖；不要再把任务文件放进 `docs/codex_with_cc` 这种会进版本库的目录里，也不要再依赖 `.gitkeep` 之类的占位文件。
-同时应确保目标项目的 `.gitignore` 包含 `.codex/`，避免委派任务和运行产物被误提交。
+同时应确保目标项目的 `.gitignore` 包含 `.codex/codex_with_cc`，避免本工作流的委派任务和运行产物被误提交，同时不影响目标项目 `.codex` 下其他共用内容。
 
 5. 更新目标项目根目录的 `AGENTS.md`。没有就创建，有就追加托管块，不要删旧内容。除非用户明确禁止，否则不要为这一步单独征求确认。
 
@@ -196,7 +199,7 @@ pwsh -NoProfile -File .\docs\codex_with_cc\windows_scripts\delegate_to_claude.ps
 委派过程的产物默认写在目标项目：
 
 ```text
-.codex/claude-delegate
+.codex/codex_with_cc/claude-delegate
 ```
 
 常见文件包括：

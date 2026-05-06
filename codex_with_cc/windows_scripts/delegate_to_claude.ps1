@@ -51,7 +51,7 @@ $sessionPoolHelperPath = Join-Path $PSScriptRoot 'claude_session_pool.ps1'
 $backendHelperPath = Join-Path $PSScriptRoot 'claude_delegate_backend_helpers.ps1'
 
 if ([string]::IsNullOrWhiteSpace($ArtifactRoot)) {
-  $ArtifactRoot = Join-Path $repoRoot '.codex\claude-delegate'
+  $ArtifactRoot = Join-Path $repoRoot '.codex\codex_with_cc\claude-delegate'
 }
 $resolvedArtifactRoot = [System.IO.Path]::GetFullPath($ArtifactRoot)
 
@@ -181,6 +181,7 @@ $taskText
 Hard requirements:
 - Read docs/codex_with_cc/CODEX_WITH_CC.md before scanning other repository files.
 - Use docs/codex_with_cc/CODEX_WITH_CC.md as the single workflow contract for delegation, audit flow, session mode interpretation, and worker report requirements.
+- Follow all applicable project-defined skills and workflow skills before implementing or changing behavior, especially Codex project skills under `.codex`. Read the target project's agent/rule files and referenced skill documents when they apply to the delegated task.
 - Keep edits inside the intended scope unless the task is impossible without a small supporting change.
 - You must run necessary verification before handing work back. Run every command listed under Required or expected verification; if none is listed, infer the smallest meaningful format/analyze/test command for the changed area.
 - Do not return code that you know fails to compile, analyze, or pass the required focused tests. Fix verification failures and rerun them until they pass.
