@@ -8,13 +8,19 @@
 
 但问题也很现实：模型越叼，额度烧起来越快。
 
-穷则思变，富则...算了，咱是穷鬼，富哥就不需要用这套工作流了！
+穷则思变，富则...算了，富哥就不需要用这套工作流了！
 
 于是有了这套穷鬼工作流：让 Codex 继续当最聪明的 leader，负责规划、拆解、调度和验收；真正吃 token 的脏活累活，交给 Codex 子代理里的 Claude Code，再通过 CC Switch 把后端切到 DeepSeek。
 
 这样一来，Codex Plus 基本就可以爽用无忧。主线程保持清醒，子代理疯狂干活，DeepSeek 靠夸张缓存命中率把成本压下去，长任务、多代理、大范围代码探索都能放开玩。
 
-这一切都基于 DeepSeek 的离谱低价！在加上缓存命中价格百万token俩分钱！长任务、多代理、大范围代码探索，给我往死里造！反正苦力便宜，Token 成本四舍五入等于不要钱！
+这一切都基于 DeepSeek 的离谱低价！六千万token的使用量，缓存命中98.5%，花费俩块钱，按照这套工作流，有codex统筹规划和结果验收，子代理只需要无脑干活，用deepseek 4 flash模型都绰绰有余。
+
+<img width="1619" height="971" alt="ChatGPT Image 2026年5月6日 22_10_26" src="https://github.com/user-attachments/assets/ba655d4d-e070-40e9-a6cd-a582f23617c8" />
+
+DeepSeek的api价格表，缓存命中0.02元/百万token，这和白送有什么区别？这个缓存命中折扣好像是永久折扣，没有时间限制……
+
+<img width="1802" height="872" alt="ChatGPT Image 2026年5月6日 22_22_26" src="https://github.com/user-attachments/assets/7d1bebeb-edac-494e-8bd0-6431e1f2b1c3" />
 
 **人民的 DeepSeek，小 D 的恩情还不完😭**
 
