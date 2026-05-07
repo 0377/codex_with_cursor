@@ -1510,7 +1510,7 @@ def run_verify_artifacts(ns: argparse.Namespace) -> int:
 def normalize_run_ids(values: Iterable[str]) -> list[str]:
     out: list[str] = []
     for value in values:
-        for part in re.split(r"\s*,\s*", str(value)):
+        for part in re.split(r"[\s,]+", str(value)):
             clean = part.strip().strip("'\"")
             if clean:
                 out.append(clean)
@@ -1879,9 +1879,6 @@ def run_install(ns: argparse.Namespace) -> int:
     target_workflow.mkdir(parents=True, exist_ok=True)
     excluded = "macos_scripts" if install_platform == "Windows" else "windows_scripts"
     copy_workflow_source(source_workflow, target_workflow, excluded)
-    excluded_tests = target_workflow / "tests" / excluded
-    if excluded_tests.exists():
-        shutil.rmtree(excluded_tests)
     update_installed_workflow_references(target_workflow, workflow_relative)
     if install_platform == "macOS":
         mac_scripts = target_workflow / "macos_scripts"
@@ -2180,13 +2177,39 @@ def run_test_session_pool(_: argparse.Namespace) -> int:
         return 0
 
 
+def choice_arg(choices: list[str]) -> Callable[[str], str]:
+    lookup = {choice.lower(): choice for choice in choices}
+
+    def parse(value: str) -> str:
+        selected = lookup.get(value.lower())
+        if selected is None:
+            expected = ", ".join(choices)
+            raise argparse.ArgumentTypeError(f"invalid choice: {value!r} (choose from {expected})")
+        return selected
+
+    return parse
+
+
+def int_range_arg(name: str, minimum: int, maximum: int) -> Callable[[str], int]:
+    def parse(value: str) -> int:
+        try:
+            parsed = int(value)
+        except ValueError as exc:
+            raise argparse.ArgumentTypeError(f"{name} must be an integer") from exc
+        if parsed < minimum or parsed > maximum:
+            raise argparse.ArgumentTypeError(f"{name} must be between {minimum} and {maximum}")
+        return parsed
+
+    return parse
+
+
 def add_delegate_args(parser: argparse.ArgumentParser) -> None:
     task_group = parser.add_mutually_exclusive_group()
     task_group.add_argument("-Task", dest="task")
     task_group.add_argument("-TaskFile", dest="task_file")
     parser.add_argument("-Scope", dest="scope", action="append", default=[])
     parser.add_argument("-Tests", dest="tests", action="append", default=[])
-    parser.add_argument("-Mode", dest="mode", choices=["Implement", "Fix", "Review"], default="Implement")
+    parser.add_argument("-Mode", dest="mode", type=choice_arg(["Implement", "Fix", "Review"]), default="Implement")
     parser.add_argument("-Model", dest="model", default="sonnet")
     parser.add_argument("-Name", dest="name")
     parser.add_argument("-NamePrefix", dest="name_prefix", default="codex-delegate")
@@ -2194,7 +2217,7 @@ def add_delegate_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("-ArtifactRoot", dest="artifact_root")
     parser.add_argument("-OutputPath", dest="output_path")
     parser.add_argument("-AllowParallel", dest="allow_parallel", action="store_true")
-    parser.add_argument("-SessionMode", dest="session_mode", choices=["PrimaryReuse", "PrimaryAnchor", "ParallelPool"], default="PrimaryReuse")
+    parser.add_argument("-SessionMode", dest="session_mode", type=choice_arg(["PrimaryReuse", "PrimaryAnchor", "ParallelPool"]), default="PrimaryReuse")
     parser.add_argument("-SessionKey", dest="session_key")
     parser.add_argument("-SessionLeaseTimeoutSeconds", dest="session_lease_timeout_seconds", type=int, default=21600)
     parser.add_argument("-SessionLeaseWaitSeconds", dest="session_lease_wait_seconds", type=int, default=120)
@@ -2202,7 +2225,7 @@ def add_delegate_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("-ResetParallelPool", dest="reset_parallel_pool", action="store_true")
     parser.add_argument("-LockTimeoutSeconds", dest="lock_timeout_seconds", type=int, default=120)
     parser.add_argument("-LockPollMilliseconds", dest="lock_poll_milliseconds", type=int, default=500)
-    parser.add_argument("-MaxRetryCount", dest="max_retry_count", type=int, default=5)
+    parser.add_argument("-MaxRetryCount", dest="max_retry_count", type=int_range_arg("MaxRetryCount", 0, 100), default=5)
     parser.add_argument("-BypassPermissions", dest="bypass_permissions", action="store_true")
     parser.add_argument("-DryRun", dest="dry_run", action="store_true")
 

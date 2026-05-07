@@ -126,8 +126,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\install_codex_with_cc.ps1 -Targe
 2. 直接更新 `AGENTS.md`。
 3. 直接运行：
    - `pwsh -NoProfile -File .\<workflow-root>\windows_scripts\test_delegate_runtime.ps1`
-   - `pwsh -NoProfile -File .\<workflow-root>\tests\windows_scripts\test_delegate_runtime.ps1`
-   - `pwsh -NoProfile -File .\<workflow-root>\tests\windows_scripts\test_delegate_session_pool.ps1`
+   - `pwsh -NoProfile -File .\<workflow-root>\windows_scripts\test_delegate_session_pool.ps1`
 4. 最后再向用户汇报结果。
 
 不要在 Windows 安装前额外追问“是否覆盖旧工作流”“是否需要验证”“是否需要改 AGENTS.md”；这些都已经有默认答案。
@@ -141,8 +140,8 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\install_codex_with_cc.ps1 -Targe
 Windows 验证命令，在目标项目根目录执行：
 
 ```powershell
-pwsh -NoProfile -File .\<workflow-root>\tests\windows_scripts\test_delegate_runtime.ps1
-pwsh -NoProfile -File .\<workflow-root>\tests\windows_scripts\test_delegate_session_pool.ps1
+pwsh -NoProfile -File .\<workflow-root>\windows_scripts\test_delegate_runtime.ps1
+pwsh -NoProfile -File .\<workflow-root>\windows_scripts\test_delegate_session_pool.ps1
 pwsh -NoProfile -File .\<workflow-root>\windows_scripts\run_real_delegate_chain_validation.ps1
 ```
 
@@ -173,8 +172,8 @@ macOS 不要照抄 Windows PowerShell 命令给用户。优先使用源仓库的
 macOS 验证命令，在目标项目根目录执行：
 
 ```bash
-./<workflow-root>/tests/macos_scripts/test_delegate_runtime.sh
-./<workflow-root>/tests/macos_scripts/test_delegate_session_pool.sh
+./<workflow-root>/macos_scripts/test_delegate_runtime.sh
+./<workflow-root>/macos_scripts/test_delegate_session_pool.sh
 ./<workflow-root>/macos_scripts/run_real_delegate_chain_validation.sh
 ```
 

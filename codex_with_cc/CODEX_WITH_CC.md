@@ -93,15 +93,15 @@ Run the local regression tests after installing or changing this workflow.
 Windows:
 
 ```powershell
-pwsh -NoProfile -File .\docs\codex_with_cc\tests\windows_scripts\test_delegate_runtime.ps1
-pwsh -NoProfile -File .\docs\codex_with_cc\tests\windows_scripts\test_delegate_session_pool.ps1
+pwsh -NoProfile -File .\docs\codex_with_cc\windows_scripts\test_delegate_runtime.ps1
+pwsh -NoProfile -File .\docs\codex_with_cc\windows_scripts\test_delegate_session_pool.ps1
 ```
 
 macOS:
 
 ```bash
-./docs/codex_with_cc/tests/macos_scripts/test_delegate_runtime.sh
-./docs/codex_with_cc/tests/macos_scripts/test_delegate_session_pool.sh
+./docs/codex_with_cc/macos_scripts/test_delegate_runtime.sh
+./docs/codex_with_cc/macos_scripts/test_delegate_session_pool.sh
 ```
 
 Generate a real chain validation scaffold with:

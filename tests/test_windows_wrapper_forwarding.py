@@ -61,22 +61,17 @@ def make_fake_claude_bin(root: Path) -> Path:
     return fake_bin
 
 
-def test_delegate_wrapper_preserves_typed_surface_and_forwards_to_python() -> None:
+def test_delegate_wrapper_is_thin_and_forwards_to_python() -> None:
     scripts = WORKFLOW / "scripts"
     assert (scripts / "delegate_to_claude.py").exists()
     assert (scripts / "runtime.py").exists()
     assert (WIN / "_runtime.ps1").exists()
 
     delegate_text = (WIN / "delegate_to_claude.ps1").read_text(encoding="utf-8")
-    assert "ParameterSetName = 'Inline'" in delegate_text
-    assert "ParameterSetName = 'File'" in delegate_text
-    assert "[string[]]$Scope" in delegate_text
-    assert "[string[]]$Tests" in delegate_text
-    assert "[ValidateSet('Implement', 'Fix', 'Review')]" in delegate_text
-    assert "[ValidateSet('PrimaryReuse', 'PrimaryAnchor', 'ParallelPool')]" in delegate_text
-    assert "[ValidateRange(0, 100)]" in delegate_text
-    assert "[Nullable[decimal]]$MaxBudgetUsd" in delegate_text
+    assert "param(" not in delegate_text
+    assert delegate_text.count("\n") <= 2
     assert "Invoke-CodexWithCcRuntime" in delegate_text
+    assert "delegate_to_claude.py" in delegate_text
 
     with tempfile.TemporaryDirectory(prefix="codex_with_cc_wrapper_") as tmp:
         artifact_root = Path(tmp) / "artifacts"
@@ -171,7 +166,19 @@ def test_delegate_wrapper_preserves_typed_surface_and_forwards_to_python() -> No
         assert "MaxRetryCount" in (invalid_retry.stdout + invalid_retry.stderr)
 
 
+def assert_windows_wrapper_is_thin(script_name: str, python_script: str) -> None:
+    wrapper_text = (WIN / script_name).read_text(encoding="utf-8")
+    assert "param(" not in wrapper_text
+    assert wrapper_text.count("\n") <= 2
+    assert "Invoke-CodexWithCcRuntime" in wrapper_text
+    assert python_script in wrapper_text
+
+
 def test_windows_artifact_and_chain_wrappers_forward_to_python() -> None:
+    assert_windows_wrapper_is_thin("verify_delegate_artifacts.ps1", "verify_delegate_artifacts.py")
+    assert_windows_wrapper_is_thin("verify_delegate_chain.ps1", "verify_delegate_chain.py")
+    assert_windows_wrapper_is_thin("run_real_delegate_chain_validation.ps1", "run_real_delegate_chain_validation.py")
+
     with tempfile.TemporaryDirectory(prefix="codex_with_cc_chain_wrapper_") as tmp:
         root = Path(tmp)
         artifact_root = root / "artifacts"
@@ -254,6 +261,6 @@ def test_windows_artifact_and_chain_wrappers_forward_to_python() -> None:
 
 
 if __name__ == "__main__":
-    test_delegate_wrapper_preserves_typed_surface_and_forwards_to_python()
+    test_delegate_wrapper_is_thin_and_forwards_to_python()
     test_windows_artifact_and_chain_wrappers_forward_to_python()
     print("windows wrapper forwarding tests passed")

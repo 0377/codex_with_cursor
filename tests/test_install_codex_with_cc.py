@@ -44,9 +44,9 @@ with tempfile.TemporaryDirectory(prefix="codex_with_cc_install_") as tmp:
     assert (workflow / "CODEX_WITH_CC.md").exists()
     assert (workflow / "scripts" / "delegate_to_claude.py").exists()
     assert (workflow / "scripts" / "runtime.py").exists()
-    assert (workflow / "tests" / "test_delegate_runtime.py").exists()
-    assert (workflow / "tests" / "windows_scripts" / "test_delegate_runtime.ps1").exists()
-    assert not (workflow / "tests" / "macos_scripts").exists()
+    assert (workflow / "scripts" / "test_delegate_runtime.py").exists()
+    assert not (workflow / "tests").exists()
+    assert (workflow / "windows_scripts" / "test_delegate_runtime.ps1").exists()
     assert (workflow / "windows_scripts" / "delegate_to_claude.ps1").exists()
     assert not (workflow / "macos_scripts").exists()
     assert task_root.exists()
@@ -58,6 +58,7 @@ with tempfile.TemporaryDirectory(prefix="codex_with_cc_install_") as tmp:
     assert "<!-- BEGIN CODEX_WITH_CC -->" in agents
     assert "docs/codex_with_cc/CODEX_WITH_CC.md" in agents
     assert "`docs/codex_with_cc/CODEX_WITH_CC.md`" in agents
+    assert "Any user mention of child-agent, subagent, sub-agent, child-thread, subthread, delegation, worker-execution, or Chinese equivalents such as 子代理、子线程、多代理、委派、派工、执行层 is a workflow trigger." in agents
     assert "Codex main thread -> Codex child agent -> delegate_to_claude.* -> Claude Code CLI" in agents
     assert "Agent entrypoints updated: AGENTS.md" in out
 
@@ -106,9 +107,9 @@ with tempfile.TemporaryDirectory(prefix="codex_with_cc_install_") as tmp:
     mac_workflow = mac_target / "doc" / "codex_with_cc"
     assert (mac_workflow / "scripts" / "delegate_to_claude.py").exists()
     assert (mac_workflow / "scripts" / "runtime.py").exists()
-    assert (mac_workflow / "tests" / "test_delegate_runtime.py").exists()
-    assert (mac_workflow / "tests" / "macos_scripts" / "test_delegate_runtime.sh").exists()
-    assert not (mac_workflow / "tests" / "windows_scripts").exists()
+    assert (mac_workflow / "scripts" / "test_delegate_runtime.py").exists()
+    assert not (mac_workflow / "tests").exists()
+    assert (mac_workflow / "macos_scripts" / "test_delegate_runtime.sh").exists()
     assert (mac_workflow / "macos_scripts" / "_runtime.sh").exists()
     assert (mac_workflow / "macos_scripts" / "delegate_to_claude.sh").exists()
     assert not (mac_workflow / "macos_scripts" / "README.md").exists()
