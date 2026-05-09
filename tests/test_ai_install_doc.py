@@ -9,6 +9,13 @@ compat_phrase = "".join(("兼容", "路径"))
 
 assert "[marketplaces.aiskyhub]" in text
 assert '[plugins."codex-with-cc@aiskyhub"]' in text
+assert "如果宿主环境还没有安装 `codex` CLI，先自动安装官方 CLI，再继续后续步骤。" in text
+assert "### 1. 检查并安装 Codex CLI" in text
+assert "Get-Command codex -ErrorAction SilentlyContinue" in text
+assert "command -v codex" in text
+assert "npm i -g @openai/codex" in text
+assert "安装完成后再次确认 `codex` 命令可用，再继续 marketplace 安装流程。" in text
+assert "如果 `npm` 不存在、CLI 安装失败、或安装后仍然无法调用 `codex`，直接报告失败并停止，不要跳过这一步继续执行。" in text
 assert "codex plugin marketplace add aiskyhub/aiskyhub" in text
 assert "codex-with-cc@aiskyhub" in text
 assert "--scope user" in text
@@ -30,6 +37,8 @@ assert "/plugin marketplace list" not in text
 assert "claude plugin marketplace list" not in text
 assert "/plugin marketplace add aiskyhub/aiskyhub" not in text
 assert "/reload-plugins" not in text
+assert "## 安装或更新完成后告知用户" in text
+assert "不要只说“好了”或“已完成”" in text
 assert f"{legacy_installer_stem}.ps1" not in text
 assert f"{legacy_installer_stem}.sh" not in text
 assert legacy_scope_phrase not in text

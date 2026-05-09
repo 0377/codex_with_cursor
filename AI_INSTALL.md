@@ -9,10 +9,11 @@
 1. 直接执行，不要先把安装过程变成问答游戏。
 2. 如果检测到旧版脚本安装残留，先清理项目下旧安装产物和用户级旧版 `codex-with-cc` skill，再继续 marketplace 安装。
 3. 默认执行用户级安装，不要切成项目级，除非用户明确要求。
-4. 默认先检查 `aiskyhub` marketplace 是否已存在，再检查 `codex-with-cc@aiskyhub` 是否已启用。
-5. marketplace 添加或插件安装失败时直接停止并报告，不要回退到复制文件、写入旧目录或执行本地安装脚本。
-6. 必要时提醒用户重载插件列表或重启宿主。
-7. 只有 marketplace 仓库不可达、宿主没有可用插件命令、或读取配置失败时，才停下来询问用户。
+4. 如果宿主环境还没有安装 `codex` CLI，先自动安装官方 CLI，再继续后续步骤。
+5. 默认先检查 `aiskyhub` marketplace 是否已存在，再检查 `codex-with-cc@aiskyhub` 是否已启用。
+6. marketplace 添加或插件安装失败时直接停止并报告，不要回退到复制文件、写入旧目录或执行本地安装脚本。
+7. 必要时提醒用户重载插件列表或重启宿主。
+8. 只有 marketplace 仓库不可达、宿主没有可用插件命令、或读取配置失败时，才停下来询问用户。
 
 ## 目标
 
@@ -66,7 +67,33 @@ Plugin name: codex-with-cc@aiskyhub
 
 Codex 当前 CLI 没有 `marketplace list` 子命令，因此“是否已添加 marketplace”必须通过读取 `~/.codex/config.toml` 判定。
 
-### 1. 检查 marketplace
+### 1. 检查并安装 Codex CLI
+
+先检查 `codex` 命令是否可用。
+
+PowerShell：
+
+```powershell
+Get-Command codex -ErrorAction SilentlyContinue
+```
+
+macOS / Linux：
+
+```bash
+command -v codex
+```
+
+如果不存在，直接按 OpenAI 官方方式安装：
+
+```bash
+npm i -g @openai/codex
+```
+
+安装完成后再次确认 `codex` 命令可用，再继续 marketplace 安装流程。
+
+如果 `npm` 不存在、CLI 安装失败、或安装后仍然无法调用 `codex`，直接报告失败并停止，不要跳过这一步继续执行。
+
+### 2. 检查 marketplace
 
 检查：
 
@@ -80,7 +107,7 @@ Codex 当前 CLI 没有 `marketplace list` 子命令，因此“是否已添加 
 codex plugin marketplace add aiskyhub/aiskyhub
 ```
 
-### 2. 检查插件
+### 3. 检查插件
 
 检查：
 
@@ -103,6 +130,21 @@ codex plugin marketplace add aiskyhub/aiskyhub
 - 不要复制仓库文件到任何本地 skill 目录
 - 不要创建或恢复旧的安装脚本路径
 - 不要把失败处理成“先手动复制再说”
+
+## 安装或更新完成后告知用户
+
+最终回复至少要明确这些信息：
+
+- 这次是安装成功、更新成功，还是只完成了前置检查
+- 是否新增了 `aiskyhub` marketplace
+- 是否清理了项目下旧安装产物
+- 是否清理了用户级旧版 `codex-with-cc` skill
+- `codex-with-cc@aiskyhub` 是否已经安装或更新完成
+- 是否需要用户执行 `/plugin install codex-with-cc@aiskyhub --scope user`
+- 是否需要用户重载插件列表或重启 Codex
+- 如果有步骤没执行，必须说明阻塞原因
+
+不要只说“好了”或“已完成”，要把本次更新实际变更和剩余动作交代清楚。
 
 ## 委派规则
 
