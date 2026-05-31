@@ -15,7 +15,9 @@ def test_ai_install_doc_contract() -> None:
     assert "codex-with-cursor@aiskyhub" not in text
     assert "marketplace-only" not in text
     assert "repo-direct" in text or "仓库直装" in text
-    assert "codex plugin install https://github.com/xdd666t/codex_with_cc" in text
+    assert "codex plugin install https://github.com/0377/codex_with_cursor" in text
+    assert "git clone https://github.com/0377/codex_with_cursor.git" in text
+    assert "codex plugin install /path/to/codex_with_cursor" in text
     assert '[plugins."codex-with-cursor"]' in text
     assert "如果宿主环境还没有安装 `codex` CLI，先自动安装官方 CLI，再继续后续步骤。" in text
     assert "### 1. 检查并安装 Codex CLI" in text

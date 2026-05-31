@@ -15,7 +15,7 @@ Do not satisfy a triggered request with default Codex subagent behavior, direct 
 
 Read `CODEX_WITH_CURSOR.md` in this skill directory before using the workflow. Treat it as the human contract for task-file-only dispatch, workflow/task/run artifacts, role rules, review gates, and verification. Treat `contract.json` as the machine-readable source for trigger patterns, report headings, roles, status tokens, spawn metadata, and forbidden legacy arguments.
 
-This skill is distributed through a plugin-managed installation. When invoking bundled scripts, run them from the target project's current working directory so `.codex/codex_with_cc` tasks and artifacts are written to that project, not to the plugin cache.
+This skill is distributed through a plugin-managed installation from [this repository](https://github.com/0377/codex_with_cursor). When invoking bundled scripts, run them from the target project's current working directory so `.codex/codex_with_cursor` tasks and artifacts are written to that project, not to the plugin cache.
 
 The required chain is:
 

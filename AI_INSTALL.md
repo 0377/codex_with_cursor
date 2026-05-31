@@ -1,6 +1,6 @@
 # AI 安装说明
 
-本文件是 `codex_with_cc` 的仓库直装安装契约，给 AI 执行安装或更新时使用。README 的安装提示保持不变；不要修改 README。
+本文件是 `codex_with_cursor` 的仓库直装安装契约，给 AI 执行安装或更新时使用。安装源为本仓库 [https://github.com/0377/codex_with_cursor](https://github.com/0377/codex_with_cursor)，不经过插件市场。
 
 ## 默认交互策略
 
@@ -53,7 +53,7 @@ Codex 主线程 -> Codex spawn_agent 子线程 -> 已安装插件中的 delegate
 唯一分发入口为本仓库（直装，不经过插件市场）：
 
 ```text
-Repository: https://github.com/xdd666t/codex_with_cc
+Repository: https://github.com/0377/codex_with_cursor
 Plugin name: codex-with-cursor
 ```
 
@@ -119,19 +119,29 @@ command -v agent
 
 若不存在，按 Cursor 官方文档安装 CLI（例如 `curl https://cursor.com/install -fsS | bash`），并确认 `agent` 可用。无法安装则报告失败并停止。
 
-### 3. 安装插件（仓库直装）
+### 3. 安装插件（本仓库直装）
 
-优先从 GitHub 安装：
+按优先级选择一种方式（均安装插件 `codex-with-cursor`）：
+
+**A. 已在当前仓库工作区**（目录内存在 `.codex-plugin/plugin.json`）：
 
 ```bash
-codex plugin install https://github.com/xdd666t/codex_with_cc --scope user
+codex plugin install "$(git -C /path/to/codex_with_cursor rev-parse --show-toplevel)" --scope user
 ```
 
-若网络或权限导致失败，回退为 clone 后本地安装：
+将 `/path/to/codex_with_cursor` 换成实际 clone 路径；若命令就在仓库根目录执行，可用 `$(git rev-parse --show-toplevel)`。
+
+**B. 从本仓库 GitHub 源安装：**
 
 ```bash
-git clone https://github.com/xdd666t/codex_with_cc.git
-codex plugin install /path/to/codex_with_cc --scope user
+codex plugin install https://github.com/0377/codex_with_cursor --scope user
+```
+
+**C. 回退：clone 本仓库后本地路径安装：**
+
+```bash
+git clone https://github.com/0377/codex_with_cursor.git
+codex plugin install /path/to/codex_with_cursor --scope user
 ```
 
 检查 `~/.codex/config.toml` 是否包含并启用：

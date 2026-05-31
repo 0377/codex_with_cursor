@@ -19,5 +19,5 @@ The delegated runtime, hook gate, and contract tests assume that `skills/codex-w
 ## Installation paths
 
 - Source layout: this repository exposes `.codex-plugin/plugin.json` so it can be recognized as a Codex plugin source.
-- Distribution path: `codex plugin install https://github.com/xdd666t/codex_with_cc --scope user`, or install from a local clone path.
+- Distribution path: `codex plugin install https://github.com/0377/codex_with_cursor --scope user`, or `codex plugin install <path-to-this-repo> --scope user` when working from a local clone.
 - No script-based cross-project installer is provided by this repository anymore.

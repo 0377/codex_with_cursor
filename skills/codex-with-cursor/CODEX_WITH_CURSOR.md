@@ -63,7 +63,7 @@ Pre-dispatch validation:
 
 ```powershell
 pwsh -NoProfile -File <installed-workflow-root>\windows_scripts\validate_delegate_task.ps1 `
-  -TaskFile .\.codex\codex_with_cc\tasks\<task-file>.md `
+  -TaskFile .\.codex\codex_with_cursor\tasks\<task-file>.md `
   -Role implementer `
   -Tests "pytest -q"
 ```
@@ -153,7 +153,7 @@ Delegation artifacts are written under `.codex/codex_with_cursor/cursor-delegate
 
 Use `verify_delegate_run.*` or `verify_delegate_artifacts.*` for each run, `verify_delegate_workflow.*` for the workflow aggregate, and `verify_delegate_chain.*` for multi-run session continuity checks. `verify_delegate_workflow.*` enforces review gates, the final-verifier gate, declared `-Tests` evidence for non-dry-run `DONE` reports, and non-overlapping parallel implementer scopes. The shared implementation lives under `scripts/*.py`; platform wrappers stay thin.
 
-`<installed-workflow-root>` means the installed `skills/codex-with-cursor` directory, for example `<codex-home>/plugins/cache/aiskyhub/codex-with-cursor/<version-or-hash>/skills/codex-with-cursor`. Do not use the package root `<version-or-hash>` directory.
+`<installed-workflow-root>` means the installed `skills/codex-with-cursor` directory, for example `<codex-home>/plugins/cache/.../codex-with-cursor/<version-or-hash>/skills/codex-with-cursor` after `codex plugin install` from [this repository](https://github.com/0377/codex_with_cursor). Do not use the package root `<version-or-hash>` directory.
 
 ## Standard Worker Command
 Normally run this inside a Codex child thread. If the Codex sandbox or delegated runner cannot execute it, use the trusted local terminal fallback above.
@@ -164,7 +164,7 @@ Windows:
 $workflowRoot = '<installed-workflow-root>'
 $env:CODEX_CURSOR_CHILD_THREAD = '1'
 pwsh -NoProfile -File (Join-Path $workflowRoot 'windows_scripts\delegate_to_cursor.ps1') `
-  -TaskFile .\.codex\codex_with_cc\tasks\<yyyyMMdd>\<HHmmssfff>-<short-id>-<task-file>.md `
+  -TaskFile .\.codex\codex_with_cursor\tasks\<yyyyMMdd>\<HHmmssfff>-<short-id>-<task-file>.md `
   -WorkflowId <workflow-id> `
   -TaskId <task-id> `
   -Role implementer `

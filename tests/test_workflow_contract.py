@@ -89,20 +89,10 @@ def run_id_from_output(output: str) -> str:
     raise AssertionError(f"RunId line missing from output:\n{output}")
 
 
-def test_readme_is_frozen_and_install_prompt_remains_available() -> None:
+def test_readme_install_prompt_points_to_this_repository() -> None:
     current = (REPO / "README.md").read_text(encoding="utf-8")
-    baseline = subprocess.run(
-        ["git", "show", "HEAD:README.md"],
-        cwd=REPO,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        encoding="utf-8",
-        check=True,
-    ).stdout
-
-    assert current == baseline
-    assert "请把 https://github.com/aiskyhub/codex_with_cc 子代理工作流安装或更新到当前 Codex 环境。" in current
+    assert "请把 https://github.com/0377/codex_with_cursor 子代理工作流（codex-with-cursor）安装或更新到当前 Codex 环境。" in current
+    assert "aiskyhub/codex_with_cc" not in current
 
 
 def test_report_contract_accepts_statuses_and_roles() -> None:

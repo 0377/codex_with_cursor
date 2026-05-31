@@ -34,7 +34,9 @@ def test_plugin_manifest_and_docs_contract() -> None:
     assert any("codex-with-cursor" in prompt for prompt in codex_interface["defaultPrompt"])
 
     assert "[AI_INSTALL.md](AI_INSTALL.md)" in readme_text
-    assert "https://github.com/aiskyhub/codex_with_cc" in readme_text
+    assert "https://github.com/0377/codex_with_cursor" in readme_text
+    assert "codex-with-cursor" in readme_text
+    assert "aiskyhub/codex_with_cc" not in readme_text
     assert "安装或更新" in readme_text
     assert "当前 Codex 环境" in readme_text
     assert compat_install_phrase not in readme_text
