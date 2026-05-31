@@ -30,3 +30,13 @@ Dispatch discipline:
 - After a parallel batch, wait for the anchor and side tasks before serial review or follow-up implementation.
 
 Do not dispatch default Codex workers outside the codex-with-cursor chain.
+
+## spawn_agent message (platform gate)
+
+The PreToolUse gate inspects the serialized `spawn_agent` payload. Keep the message at the orchestration layer:
+
+- Include `CODEX_CURSOR_CHILD_THREAD=1`, `delegate_to_cursor.ps1` or `delegate_to_cursor.sh`, and every required delegate flag: `-TaskFile`, `-WorkflowId`, `-TaskId`, `-Role`, `-SessionKey`.
+- Point the child thread at the installed `codex-with-cursor-dispatching` skill and the on-disk TaskFile instead of pasting the Standard Worker Command block from `CODEX_WITH_CURSOR.md`.
+- Prose may mention the workflow name `codex-with-cursor` or phrases such as "Cursor Agent CLI" when explaining what the child must not run directly.
+- Do not paste executable `agent ...` or `cursor ...` CLI examples into `spawn_agent.message`; those belong only inside the child thread's `delegate_to_cursor.*` runtime, not in the spawn payload.
+- Do not embed the full TaskFile body in `spawn_agent.message` when Forbidden Actions mention avoiding direct CLI usage; keep task instructions in `-TaskFile` only.

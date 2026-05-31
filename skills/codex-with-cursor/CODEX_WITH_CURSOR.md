@@ -81,6 +81,7 @@ The Codex plugin declares `./hooks/hooks.json` as a semi-hard platform gate. Whe
 - `SessionStart` injects this full contract.
 - `UserPromptSubmit` reinforces the contract for delegation trigger words.
 - `PreToolUse` denies visible direct `agent`, direct main-thread `delegate_to_cursor.*`, missing `CODEX_CURSOR_CHILD_THREAD=1`, missing `-TaskFile`, missing workflow metadata, missing `-SessionKey`, legacy `-Task`, legacy `-Mode`, reviewer runs without review metadata, and parallel writable runs without `-Scope`.
+- `spawn_agent` messages should stay at the codex-with-cursor orchestration layer: required child-thread marker, `delegate_to_cursor.*`, and workflow metadata. Prose may reference `codex-with-cursor` or explain that the child must not call the CLI directly; do not paste executable `agent ...` examples into the spawn payload. The Standard Worker Command below is for the child thread only.
 
 The hook reads `contract.json` for shared tokens. This is not a kernel boundary; final responsibility remains with the Codex main thread.
 

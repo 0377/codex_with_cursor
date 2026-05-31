@@ -325,8 +325,21 @@ function hasForbiddenEffort(serialized) {
   return /(?:^|[\s"'])--effort\b/i.test(serialized);
 }
 
+function maskCursorCommandFalsePositives(serialized) {
+  return String(serialized)
+    .replace(/codex-with-cursor/gi, "__CODEX_WITH_CURSOR__")
+    .replace(/delegate_to_cursor/gi, "__DELEGATE_TO_CURSOR__")
+    .replace(/spawn_agent/gi, "__SPAWN_AGENT__")
+    .replace(/Cursor\s+Agent(?:\s+CLI)?/gi, "__CURSOR_AGENT_PHRASE__");
+}
+
 function hasDirectCursorCommand(serialized) {
-  return /(?:^|[\s;&|"'`])(?:\.\/|\.\\|[\w:/\\.-]*[/\\])?(?:agent|cursor)(?:\.cmd|\.exe)?(?=$|[\s;&|"'`])/i.test(serialized);
+  const masked = maskCursorCommandFalsePositives(serialized);
+  const agentInvocation =
+    /(?:^|[\s;&|"'`])(?:\.\/|\.\\|[\w:/\\.-]*[/\\])?agent(?:\.cmd|\.exe)?(?:\s+(?:-p\b|--print\b|--model\b|--list-models\b|--yolo\b|--trust\b|--resume\b|--[a-zA-Z-]+)|(?=$|[\s;&|"'`]))/i;
+  const cursorInvocation =
+    /(?:^|[\s;&|"'`])(?:\.\/|\.\\|[\w:/\\.-]*[/\\])?cursor(?:\.cmd|\.exe)?\s+(?:agent\b|--)/i;
+  return agentInvocation.test(masked) || cursorInvocation.test(masked);
 }
 
 function validateWorkflowPayload(payload) {

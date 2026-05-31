@@ -175,6 +175,30 @@ def test_pre_tool_use_allows_compliant_spawn_agent_payload() -> None:
     assert output == {}
 
 
+def test_pre_tool_use_allows_spawn_agent_with_cursor_agent_cli_prose() -> None:
+    output = run_hook(
+        {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "spawn_agent",
+            "tool_input": {
+                "message": (
+                    "Follow codex-with-cursor dispatching. Set CODEX_CURSOR_CHILD_THREAD=1. "
+                    "Run macos_scripts/delegate_to_cursor.sh -TaskFile "
+                    ".codex/codex_with_cursor/tasks/20260531/120000000-hook-fix-implementer.md "
+                    "-WorkflowId wf-hook-fix -TaskId implementer-1 -Role implementer "
+                    "-SessionKey wf-hook-fix -Scope hooks. "
+                    "Do not call Cursor Agent CLI directly from the child thread."
+                ),
+                "model": "gpt-5.3-codex",
+                "reasoning_effort": "medium",
+                "fork_context": False,
+            },
+        }
+    )
+
+    assert output == {}
+
+
 def test_pre_tool_use_denies_direct_cursor_shell_command() -> None:
     output = run_hook(
         {
