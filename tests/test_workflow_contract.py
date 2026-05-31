@@ -12,16 +12,16 @@ from tests.task_helpers import compliant_task
 
 
 REPO = Path(__file__).resolve().parents[1]
-SCRIPTS = REPO / "skills" / "codex-with-cc" / "scripts"
-DELEGATE = SCRIPTS / "delegate_to_claude.py"
+SCRIPTS = REPO / "skills" / "codex-with-cursor" / "scripts"
+DELEGATE = SCRIPTS / "delegate_to_cursor.py"
 VERIFY_RUN = SCRIPTS / "verify_delegate_run.py"
 VERIFY_WORKFLOW = SCRIPTS / "verify_delegate_workflow.py"
 HOOK_SCRIPT = REPO / "hooks" / "subagent-gate-hook.mjs"
 sys.path.insert(0, str(SCRIPTS))
 
-from codex_with_cc_runtime.common import ARTIFACT_SCHEMA_VERSION, REPORT_STATUS_VALUES, WORKER_ROLES
-from codex_with_cc_runtime.reports import parse_report_final_result, parse_report_role, parse_report_status, text_has_required_report_headings
-from codex_with_cc_runtime.workflow import workflow_path
+from codex_with_cursor_runtime.common import ARTIFACT_SCHEMA_VERSION, REPORT_STATUS_VALUES, WORKER_ROLES
+from codex_with_cursor_runtime.reports import parse_report_final_result, parse_report_role, parse_report_status, text_has_required_report_headings
+from codex_with_cursor_runtime.workflow import workflow_path
 
 
 def workflow_report(status: str = "DONE", role: str = "researcher", final_result: str | None = None) -> str:
@@ -124,12 +124,12 @@ def test_report_contract_accepts_statuses_and_roles() -> None:
 
 
 def test_delegate_dry_run_writes_workflow_artifacts_and_verifies_them() -> None:
-    with tempfile.TemporaryDirectory(prefix="codex_with_cc_workflow_") as tmp:
+    with tempfile.TemporaryDirectory(prefix="codex_with_cursor_workflow_") as tmp:
         root = Path(tmp)
         artifact_root = root / "artifacts"
         env = {
             **os.environ,
-            "CODEX_CLAUDE_CHILD_THREAD": "1",
+            "CODEX_CURSOR_CHILD_THREAD": "1",
             "PYTHONDONTWRITEBYTECODE": "1",
         }
         task_file = root / "workflow-dry-run-task.md"
@@ -145,7 +145,7 @@ def test_delegate_dry_run_writes_workflow_artifacts_and_verifies_them() -> None:
             "-Role",
             "researcher",
             "-Scope",
-            "skills/codex-with-cc",
+            "skills/codex-with-cursor",
             "-Tests",
             "python -m pytest",
             "-DependsOn",
@@ -163,7 +163,7 @@ def test_delegate_dry_run_writes_workflow_artifacts_and_verifies_them() -> None:
 
         config = json.loads((artifact_root / f"config_{run_id}.json").read_text(encoding="utf-8"))
         status = json.loads((artifact_root / f"status_{run_id}.json").read_text(encoding="utf-8"))
-        report = (artifact_root / f"claude_{run_id}.md").read_text(encoding="utf-8")
+        report = (artifact_root / f"cursor_{run_id}.md").read_text(encoding="utf-8")
         workflow = json.loads(workflow_path(artifact_root, "wf-contract").read_text(encoding="utf-8"))
 
         assert config["artifactSchema"] == 3
@@ -202,9 +202,9 @@ def test_hook_gate_requires_workflow_payload_fields_and_write_scope_for_parallel
             "tool_name": "Bash",
             "tool_input": {
                 "command": (
-                    "$env:CODEX_CLAUDE_CHILD_THREAD = '1'; "
-                    "pwsh -NoProfile -File windows_scripts/delegate_to_claude.ps1 "
-                    "-TaskFile .codex/codex_with_cc/tasks/20260514/120000000-task.md "
+                    "$env:CODEX_CURSOR_CHILD_THREAD = '1'; "
+                    "pwsh -NoProfile -File windows_scripts/delegate_to_cursor.ps1 "
+                    "-TaskFile .codex/codex_with_cursor/tasks/20260514/120000000-task.md "
                     "-TaskId task-a -Role implementer"
                 )
             },
@@ -219,9 +219,9 @@ def test_hook_gate_requires_workflow_payload_fields_and_write_scope_for_parallel
             "tool_name": "Bash",
             "tool_input": {
                 "command": (
-                    "$env:CODEX_CLAUDE_CHILD_THREAD = '1'; "
-                    "pwsh -NoProfile -File windows_scripts/delegate_to_claude.ps1 "
-                    "-TaskFile .codex/codex_with_cc/tasks/20260514/120000000-task.md "
+                    "$env:CODEX_CURSOR_CHILD_THREAD = '1'; "
+                    "pwsh -NoProfile -File windows_scripts/delegate_to_cursor.ps1 "
+                    "-TaskFile .codex/codex_with_cursor/tasks/20260514/120000000-task.md "
                     "-WorkflowId wf-a -TaskId task-a -Role implementer -AllowParallel"
                 )
             },
@@ -236,12 +236,12 @@ def test_hook_gate_requires_workflow_payload_fields_and_write_scope_for_parallel
             "tool_name": "Bash",
             "tool_input": {
                 "command": (
-                    "$env:CODEX_CLAUDE_CHILD_THREAD = '1'; "
-                    "pwsh -NoProfile -File windows_scripts/delegate_to_claude.ps1 "
-                    "-TaskFile .codex/codex_with_cc/tasks/20260514/120000000-task.md "
+                    "$env:CODEX_CURSOR_CHILD_THREAD = '1'; "
+                    "pwsh -NoProfile -File windows_scripts/delegate_to_cursor.ps1 "
+                    "-TaskFile .codex/codex_with_cursor/tasks/20260514/120000000-task.md "
                     "-WorkflowId wf-a -TaskId task-a -Role researcher "
                     "-SessionKey wf-a "
-                    "-Scope skills/codex-with-cc -SessionMode ParallelPool -AllowParallel"
+                    "-Scope skills/codex-with-cursor -SessionMode ParallelPool -AllowParallel"
                 )
             },
         }

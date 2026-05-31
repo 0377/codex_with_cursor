@@ -1,0 +1,7 @@
+interface:
+  display_name: "Codex with Cursor"
+  short_description: "Route subagent work through Cursor Agent with workflow artifacts"
+  default_prompt: "Use $codex-with-cursor to route any subagent or delegation task through the Codex with Cursor Agent workflow/task/run protocol."
+
+policy:
+  allow_implicit_invocation: true

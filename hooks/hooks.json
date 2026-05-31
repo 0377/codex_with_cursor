@@ -1,5 +1,5 @@
 {
-  "description": "Semi-hard platform gate for codex-with-cc subagent routing.",
+  "description": "Semi-hard platform gate for codex-with-cursor subagent routing.",
   "hooks": {
     "SessionStart": [
       {

@@ -49,13 +49,13 @@ def test_session_start_injects_codex_with_cc_contract() -> None:
 
     assert specific["hookEventName"] == "SessionStart"
     assert "<EXTREMELY_IMPORTANT>" in context
-    assert "Below is the full content of your 'codex-with-cc' skill" in context
-    assert "# Codex with CC" in context
+    assert "Below is the full content of your 'codex-with-cursor' skill" in context
+    assert "# Codex with Cursor" in context
     assert "## Core Contract" in context
-    assert "codex-with-cc" in context
+    assert "codex-with-cursor" in context
     assert "spawn_agent" in context
-    assert "delegate_to_claude" in context
-    assert "Claude Code CLI" in context
+    assert "delegate_to_cursor" in context
+    assert "Cursor Agent CLI" in context
     assert "Workflow Method" in context
 
 
@@ -69,8 +69,8 @@ def test_user_prompt_submit_reinforces_contract_for_subagent_requests() -> None:
     context = hook_specific(output)["additionalContext"]
 
     assert "<EXTREMELY_IMPORTANT>" in context
-    assert "Below is the full content of your 'codex-with-cc' skill" in context
-    assert "codex-with-cc" in context
+    assert "Below is the full content of your 'codex-with-cursor' skill" in context
+    assert "codex-with-cursor" in context
     assert "default Codex subagent" in context
 
 
@@ -99,7 +99,7 @@ def test_pre_tool_use_denies_non_compliant_spawn_agent_payload() -> None:
     assert specific["hookEventName"] == "PreToolUse"
     assert specific["permissionDecision"] == "deny"
     assert "gpt-5.3-codex" in reason
-    assert "delegate_to_claude" in reason
+    assert "delegate_to_cursor" in reason
     assert "fork_context: false" in reason
 
 
@@ -120,7 +120,7 @@ def test_pre_tool_use_denies_namespaced_spawn_agent_payload() -> None:
 
     assert "blocked functions.spawn_agent" in reason
     assert "gpt-5.3-codex" in reason
-    assert "delegate_to_claude" in reason
+    assert "delegate_to_cursor" in reason
 
 
 def test_pre_tool_use_denies_spawn_agent_inside_parallel_wrapper() -> None:
@@ -147,7 +147,7 @@ def test_pre_tool_use_denies_spawn_agent_inside_parallel_wrapper() -> None:
 
     assert "blocked nested functions.spawn_agent" in reason
     assert "gpt-5.3-codex" in reason
-    assert "delegate_to_claude" in reason
+    assert "delegate_to_cursor" in reason
 
 
 def test_pre_tool_use_allows_compliant_spawn_agent_payload() -> None:
@@ -157,11 +157,11 @@ def test_pre_tool_use_allows_compliant_spawn_agent_payload() -> None:
             "tool_name": "spawn_agent",
             "tool_input": {
                 "message": (
-                    "Set CODEX_CLAUDE_CHILD_THREAD=1, then run "
-                    "windows_scripts/delegate_to_claude.ps1 -TaskFile "
-                    ".codex/codex_with_cc/tasks/20260514/120000000-task.md "
+                    "Set CODEX_CURSOR_CHILD_THREAD=1, then run "
+                    "windows_scripts/delegate_to_cursor.ps1 -TaskFile "
+                    ".codex/codex_with_cursor/tasks/20260514/120000000-task.md "
                     "-WorkflowId wf-a -TaskId task-a -Role researcher -SessionKey wf-a "
-                    "-Scope skills/codex-with-cc"
+                    "-Scope skills/codex-with-cursor"
                 ),
                 "model": "gpt-5.3-codex",
                 "reasoning_effort": "medium",
@@ -173,17 +173,17 @@ def test_pre_tool_use_allows_compliant_spawn_agent_payload() -> None:
     assert output == {}
 
 
-def test_pre_tool_use_denies_direct_claude_shell_command() -> None:
+def test_pre_tool_use_denies_direct_cursor_shell_command() -> None:
     output = run_hook(
         {
             "hook_event_name": "PreToolUse",
             "tool_name": "Bash",
-            "tool_input": {"command": "claude -p \"do delegated work\""},
+            "tool_input": {"command": "agent -p \"do delegated work\""},
         }
     )
     reason = hook_specific(output)["permissionDecisionReason"]
 
-    assert "direct Claude CLI" in reason
+    assert "direct Cursor Agent CLI" in reason
 
 
 def test_pre_tool_use_denies_delegate_shell_without_child_marker() -> None:
@@ -193,7 +193,7 @@ def test_pre_tool_use_denies_delegate_shell_without_child_marker() -> None:
             "tool_name": "Bash",
             "tool_input": {
                 "command": (
-                    "pwsh -NoProfile -File windows_scripts/delegate_to_claude.ps1 "
+                    "pwsh -NoProfile -File windows_scripts/delegate_to_cursor.ps1 "
                     "-Prompt \"do delegated work\""
                 )
             },
@@ -201,7 +201,7 @@ def test_pre_tool_use_denies_delegate_shell_without_child_marker() -> None:
     )
     reason = hook_specific(output)["permissionDecisionReason"]
 
-    assert "CODEX_CLAUDE_CHILD_THREAD=1" in reason
+    assert "CODEX_CURSOR_CHILD_THREAD=1" in reason
     assert "-TaskFile" in reason
 
 
@@ -212,8 +212,8 @@ def test_pre_tool_use_denies_legacy_delegate_args_and_incomplete_reviewer() -> N
             "tool_name": "Bash",
             "tool_input": {
                 "command": (
-                    "$env:CODEX_CLAUDE_CHILD_THREAD='1'; "
-                    "pwsh -NoProfile -File windows_scripts/delegate_to_claude.ps1 "
+                    "$env:CODEX_CURSOR_CHILD_THREAD='1'; "
+                    "pwsh -NoProfile -File windows_scripts/delegate_to_cursor.ps1 "
                     "-Task \"old inline\" -WorkflowId wf-a -TaskId task-a "
                     "-Role researcher -SessionKey wf-a -Mode Review"
                 )
@@ -231,9 +231,9 @@ def test_pre_tool_use_denies_legacy_delegate_args_and_incomplete_reviewer() -> N
             "tool_name": "Bash",
             "tool_input": {
                 "command": (
-                    "$env:CODEX_CLAUDE_CHILD_THREAD='1'; "
-                    "pwsh -NoProfile -File windows_scripts/delegate_to_claude.ps1 "
-                    "-TaskFile .codex/codex_with_cc/tasks/20260514/review.md "
+                    "$env:CODEX_CURSOR_CHILD_THREAD='1'; "
+                    "pwsh -NoProfile -File windows_scripts/delegate_to_cursor.ps1 "
+                    "-TaskFile .codex/codex_with_cursor/tasks/20260514/review.md "
                     "-WorkflowId wf-a -TaskId review-a -Role reviewer -SessionKey wf-a"
                 )
             },

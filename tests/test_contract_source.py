@@ -10,14 +10,14 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[1]
-WORKFLOW = REPO / "skills" / "codex-with-cc"
+WORKFLOW = REPO / "skills" / "codex-with-cursor"
 CONTRACT = WORKFLOW / "contract.json"
 HOOK_SCRIPT = REPO / "hooks" / "subagent-gate-hook.mjs"
 SCRIPTS = WORKFLOW / "scripts"
-DELEGATE = SCRIPTS / "delegate_to_claude.py"
+DELEGATE = SCRIPTS / "delegate_to_cursor.py"
 sys.path.insert(0, str(SCRIPTS))
 
-from codex_with_cc_runtime.common import REPORT_HEADINGS, REPORT_STATUS_VALUES, WORKER_ROLES
+from codex_with_cursor_runtime.common import REPORT_HEADINGS, REPORT_STATUS_VALUES, WORKER_ROLES
 
 
 def compliant_task(text: str = "Inspect the contract-driven task file gate.") -> str:
@@ -27,7 +27,7 @@ Goal
 {text}
 
 Allowed Scope
-- skills/codex-with-cc
+- skills/codex-with-cursor
 
 Forbidden Actions
 - Do not edit README.md.
@@ -85,7 +85,7 @@ def run_delegate(task_file: Path, artifact_root: Path) -> subprocess.CompletedPr
         cwd=REPO,
         text=True,
         capture_output=True,
-        env={**os.environ, "CODEX_CLAUDE_CHILD_THREAD": "1", "PYTHONDONTWRITEBYTECODE": "1"},
+        env={**os.environ, "CODEX_CURSOR_CHILD_THREAD": "1", "PYTHONDONTWRITEBYTECODE": "1"},
     )
 
 
@@ -95,7 +95,7 @@ def test_contract_json_is_single_source_for_runtime_constants() -> None:
     assert contract["workerRoles"] == list(WORKER_ROLES)
     assert contract["reportStatusValues"] == list(REPORT_STATUS_VALUES)
     assert contract["reportHeadings"] == list(REPORT_HEADINGS)
-    assert contract["childThread"]["markerName"] == "CODEX_CLAUDE_CHILD_THREAD"
+    assert contract["childThread"]["markerName"] == "CODEX_CURSOR_CHILD_THREAD"
     assert contract["childThread"]["markerValue"] == "1"
     assert contract["spawn"]["model"] == "gpt-5.3-codex"
     assert contract["spawn"]["reasoningEffort"] == "medium"
@@ -107,10 +107,10 @@ def test_contract_json_is_single_source_for_runtime_constants() -> None:
 def test_hook_gate_reads_spawn_requirements_from_contract_json() -> None:
     with tempfile.TemporaryDirectory(prefix="codex_with_cc_contract_hook_") as tmp:
         plugin_root = Path(tmp)
-        workflow_root = plugin_root / "skills" / "codex-with-cc"
+        workflow_root = plugin_root / "skills" / "codex-with-cursor"
         workflow_root.mkdir(parents=True)
-        (workflow_root / "SKILL.md").write_text("# codex-with-cc\n", encoding="utf-8")
-        (workflow_root / "CODEX_WITH_CC.md").write_text("# Codex with CC\n", encoding="utf-8")
+        (workflow_root / "SKILL.md").write_text("# codex-with-cursor\n", encoding="utf-8")
+        (workflow_root / "CODEX_WITH_CURSOR.md").write_text("# Codex with Cursor\n", encoding="utf-8")
         contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
         contract["spawn"]["model"] = "contract-model"
         (workflow_root / "contract.json").write_text(json.dumps(contract), encoding="utf-8")
@@ -121,7 +121,7 @@ def test_hook_gate_reads_spawn_requirements_from_contract_json() -> None:
                 "tool_name": "spawn_agent",
                 "tool_input": {
                     "message": (
-                        "Set CODEX_CLAUDE_CHILD_THREAD=1 and run delegate_to_claude.ps1 "
+                        "Set CODEX_CURSOR_CHILD_THREAD=1 and run delegate_to_cursor.ps1 "
                         "-TaskFile task.md -WorkflowId wf -TaskId task -Role researcher -SessionKey wf"
                     ),
                     "model": "gpt-5.3-codex",

@@ -12,8 +12,8 @@ from tests.task_helpers import compliant_task
 
 
 REPO = Path(__file__).resolve().parents[1]
-SCRIPTS = REPO / "skills" / "codex-with-cc" / "scripts"
-DELEGATE = SCRIPTS / "delegate_to_claude.py"
+SCRIPTS = REPO / "skills" / "codex-with-cursor" / "scripts"
+DELEGATE = SCRIPTS / "delegate_to_cursor.py"
 VALIDATE_TASK = SCRIPTS / "validate_delegate_task.py"
 VERIFY_ARTIFACTS = SCRIPTS / "verify_delegate_artifacts.py"
 VERIFY_WORKFLOW = SCRIPTS / "verify_delegate_workflow.py"
@@ -37,7 +37,7 @@ def run_python(script: Path, *args: str, cwd: Path = REPO) -> subprocess.Complet
         cwd=cwd,
         text=True,
         capture_output=True,
-        env={**os.environ, "CODEX_CLAUDE_CHILD_THREAD": "1", "PYTHONDONTWRITEBYTECODE": "1"},
+        env={**os.environ, "CODEX_CURSOR_CHILD_THREAD": "1", "PYTHONDONTWRITEBYTECODE": "1"},
     )
 
 
@@ -69,8 +69,8 @@ def run_delegate(root: Path, artifact_root: Path, task_id: str, role: str, *extr
     )
 
 
-def make_fake_claude_bin(root: Path, role: str, verification: str) -> Path:
-    fake_bin = root / "fake-claude-bin"
+def make_fake_agent_bin(root: Path, role: str, verification: str) -> Path:
+    fake_bin = root / "fake-agent-bin"
     fake_bin.mkdir(parents=True, exist_ok=True)
     report = "\n".join(
         (
@@ -81,7 +81,7 @@ def make_fake_claude_bin(root: Path, role: str, verification: str) -> Path:
             role,
             "",
             "Summary",
-            "Fake Claude completed the delegated task.",
+            "Fake Cursor Agent completed the delegated task.",
             "",
             "Changed Files",
             "None",
@@ -105,7 +105,7 @@ def make_fake_claude_bin(root: Path, role: str, verification: str) -> Path:
     )
     result_record = json.dumps({"type": "result", "subtype": "success"}, separators=(",", ":"))
     if os.name == "nt":
-        (fake_bin / "claude.cmd").write_text(
+        (fake_bin / "agent.cmd").write_text(
             '@echo off\n'
             'more > nul\n'
             f"echo {assistant_record}\n"
@@ -114,7 +114,7 @@ def make_fake_claude_bin(root: Path, role: str, verification: str) -> Path:
             encoding="utf-8",
         )
     else:
-        script = fake_bin / "claude"
+        script = fake_bin / "agent"
         script.write_text(
             "#!/usr/bin/env sh\n"
             "cat >/dev/null\n"
@@ -138,7 +138,7 @@ def test_task_file_contract_rejects_empty_sections_placeholders_and_incomplete_r
 Goal
 
 Allowed Scope
-- skills/codex-with-cc
+- skills/codex-with-cursor
 
 Forbidden Actions
 - Do not edit README.md.
@@ -290,7 +290,7 @@ def test_delegate_rejects_old_inline_task_and_requires_metadata() -> None:
 
         assert verified.returncode == 0, verified.stdout + verified.stderr
 
-        output = artifact_root / f"claude_{run_id}.md"
+        output = artifact_root / f"cursor_{run_id}.md"
         output.write_text(
             output.read_text(encoding="utf-8").replace(
                 f"Verification\n- dry-run artifact generation completed for RunId {run_id}",
@@ -365,7 +365,7 @@ def test_workflow_verifier_requires_declared_tests_in_done_reports() -> None:
     with tempfile.TemporaryDirectory(prefix="codex_with_cc_declared_tests_") as tmp:
         root = Path(tmp)
         artifact_root = root / "artifacts"
-        fake_bin = make_fake_claude_bin(root, "implementer", "- fake verification passed")
+        fake_bin = make_fake_agent_bin(root, "implementer", "- fake verification passed")
         task_file = write_task(root, "task-implement", "Implement with declared verification.")
         implementer = subprocess.run(
             [
@@ -391,7 +391,7 @@ def test_workflow_verifier_requires_declared_tests_in_done_reports() -> None:
             capture_output=True,
             env={
                 **os.environ,
-                "CODEX_CLAUDE_CHILD_THREAD": "1",
+                "CODEX_CURSOR_CHILD_THREAD": "1",
                 "PYTHONDONTWRITEBYTECODE": "1",
                 "PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}",
             },
@@ -428,10 +428,10 @@ def test_workflow_verifier_accepts_declared_run_id_placeholder_evidence() -> Non
         root = Path(tmp)
         artifact_root = root / "artifacts"
         declared = (
-            'pwsh -NoProfile -File .\\skills\\codex-with-cc\\windows_scripts\\verify_delegate_artifacts.ps1 '
+            'pwsh -NoProfile -File .\\skills\\codex-with-cursor\\windows_scripts\\verify_delegate_artifacts.ps1 '
             '-RunId <task-research-run-id> -ArtifactRoot "X"'
         )
-        fake_bin = make_fake_claude_bin(root, "researcher", "- placeholder verification")
+        fake_bin = make_fake_agent_bin(root, "researcher", "- placeholder verification")
         task_file = write_task(root, "task-research", "Research with declared run-id token.")
         researcher = subprocess.run(
             [
@@ -457,7 +457,7 @@ def test_workflow_verifier_accepts_declared_run_id_placeholder_evidence() -> Non
             capture_output=True,
             env={
                 **os.environ,
-                "CODEX_CLAUDE_CHILD_THREAD": "1",
+                "CODEX_CURSOR_CHILD_THREAD": "1",
                 "PYTHONDONTWRITEBYTECODE": "1",
                 "PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}",
             },
@@ -465,7 +465,7 @@ def test_workflow_verifier_accepts_declared_run_id_placeholder_evidence() -> Non
         assert researcher.returncode == 0, researcher.stdout + researcher.stderr
         run_id = run_id_from_output(researcher.stdout)
         actual = declared.replace("<task-research-run-id>", run_id)
-        output = artifact_root / f"claude_{run_id}.md"
+        output = artifact_root / f"cursor_{run_id}.md"
         output.write_text(
             "\n".join(
                 (

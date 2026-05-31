@@ -6,9 +6,9 @@ from pathlib import Path
 
 
 repo = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(repo / "skills" / "codex-with-cc" / "scripts"))
+sys.path.insert(0, str(repo / "skills" / "codex-with-cursor" / "scripts"))
 
-from codex_with_cc_runtime import io_utils
+from codex_with_cursor_runtime import io_utils
 
 
 def test_write_json_retries_permission_errors() -> None:

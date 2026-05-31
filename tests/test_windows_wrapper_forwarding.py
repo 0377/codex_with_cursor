@@ -10,7 +10,7 @@ from tests.task_helpers import compliant_task
 
 
 REPO = Path(__file__).resolve().parents[1]
-WORKFLOW = REPO / "skills" / "codex-with-cc"
+WORKFLOW = REPO / "skills" / "codex-with-cursor"
 WIN = WORKFLOW / "windows_scripts"
 
 
@@ -57,8 +57,8 @@ def write_task(root: Path, name: str, text: str) -> Path:
     return task
 
 
-def make_fake_claude_bin(root: Path) -> Path:
-    fake_bin = root / "fake-claude-bin"
+def make_fake_agent_bin(root: Path) -> Path:
+    fake_bin = root / "fake-agent-bin"
     fake_bin.mkdir(parents=True, exist_ok=True)
     report = "\n".join(
         (
@@ -69,7 +69,7 @@ def make_fake_claude_bin(root: Path) -> Path:
             "implementer",
             "",
             "Summary",
-            "Fake Claude completed the wrapper test.",
+            "Fake Cursor Agent completed the wrapper test.",
             "",
             "Changed Files",
             "None",
@@ -92,7 +92,7 @@ def make_fake_claude_bin(root: Path) -> Path:
         separators=(",", ":"),
     )
     result_record = json.dumps({"type": "result", "subtype": "success"}, separators=(",", ":"))
-    (fake_bin / "claude.cmd").write_text(
+    (fake_bin / "agent.cmd").write_text(
         '@echo off\n'
         'more > nul\n'
         f"echo {assistant_record}\n"
@@ -105,22 +105,22 @@ def make_fake_claude_bin(root: Path) -> Path:
 
 def test_delegate_wrapper_is_thin_and_forwards_to_python() -> None:
     scripts = WORKFLOW / "scripts"
-    assert (scripts / "delegate_to_claude.py").exists()
+    assert (scripts / "delegate_to_cursor.py").exists()
     assert (scripts / "runtime.py").exists()
     assert (WIN / "_runtime.ps1").exists()
 
-    delegate_text = (WIN / "delegate_to_claude.ps1").read_text(encoding="utf-8")
+    delegate_text = (WIN / "delegate_to_cursor.ps1").read_text(encoding="utf-8")
     assert "param(" not in delegate_text
     assert delegate_text.count("\n") <= 2
     assert "Invoke-CodexWithCcRuntime" in delegate_text
-    assert "delegate_to_claude.py" in delegate_text
+    assert "delegate_to_cursor.py" in delegate_text
 
     with tempfile.TemporaryDirectory(prefix="codex_with_cc_wrapper_") as tmp:
         root = Path(tmp)
         artifact_root = Path(tmp) / "artifacts"
         task_file = write_task(root, "wrapper-forwarding", "wrapper forwarding dry run")
         result = run_pwsh(
-            WIN / "delegate_to_claude.ps1",
+            WIN / "delegate_to_cursor.ps1",
             "-TaskFile",
             str(task_file),
             "-WorkflowId",
@@ -159,7 +159,7 @@ def test_delegate_wrapper_is_thin_and_forwards_to_python() -> None:
             "0",
             "-BypassPermissions",
             "-DryRun",
-            env={"CODEX_CLAUDE_CHILD_THREAD": "1"},
+            env={"CODEX_CURSOR_CHILD_THREAD": "1"},
         )
         assert result.returncode == 0, result.stdout + result.stderr
         run_id = run_id_from_output(result.stdout)
@@ -179,7 +179,7 @@ def test_delegate_wrapper_is_thin_and_forwards_to_python() -> None:
         task_file = write_task(root, "task-file-forwarding", "task file forwarding dry run")
         file_artifact_root = Path(tmp) / "file-artifacts"
         file_result = run_pwsh(
-            WIN / "delegate_to_claude.ps1",
+            WIN / "delegate_to_cursor.ps1",
             "-TaskFile",
             str(task_file),
             "-WorkflowId",
@@ -193,7 +193,7 @@ def test_delegate_wrapper_is_thin_and_forwards_to_python() -> None:
             "-SessionKey",
             "wrapper-file-session",
             "-DryRun",
-            env={"CODEX_CLAUDE_CHILD_THREAD": "1"},
+            env={"CODEX_CURSOR_CHILD_THREAD": "1"},
         )
         assert file_result.returncode == 0, file_result.stdout + file_result.stderr
         file_run_id = run_id_from_output(file_result.stdout)
@@ -203,7 +203,7 @@ def test_delegate_wrapper_is_thin_and_forwards_to_python() -> None:
         assert "task file forwarding dry run" in file_prompt
 
         invalid_retry = run_pwsh(
-            WIN / "delegate_to_claude.ps1",
+            WIN / "delegate_to_cursor.ps1",
             "-TaskFile",
             str(task_file),
             "-WorkflowId",
@@ -219,7 +219,7 @@ def test_delegate_wrapper_is_thin_and_forwards_to_python() -> None:
             "-MaxRetryCount",
             "101",
             "-DryRun",
-            env={"CODEX_CLAUDE_CHILD_THREAD": "1"},
+            env={"CODEX_CURSOR_CHILD_THREAD": "1"},
         )
         assert invalid_retry.returncode != 0
         assert "MaxRetryCount" in (invalid_retry.stdout + invalid_retry.stderr)
@@ -242,16 +242,16 @@ def test_windows_artifact_and_chain_wrappers_forward_to_python() -> None:
     with tempfile.TemporaryDirectory(prefix="codex_with_cc_chain_wrapper_") as tmp:
         root = Path(tmp)
         artifact_root = root / "artifacts"
-        fake_bin = make_fake_claude_bin(root)
+        fake_bin = make_fake_agent_bin(root)
         env = {
-            "CODEX_CLAUDE_CHILD_THREAD": "1",
+            "CODEX_CURSOR_CHILD_THREAD": "1",
             "PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}",
         }
 
         def delegate(name: str, mode: str, *extra: str) -> str:
             task = write_task(root, f"task-{name.replace(' ', '-')}", name)
             result = run_pwsh(
-                WIN / "delegate_to_claude.ps1",
+                WIN / "delegate_to_cursor.ps1",
                 "-TaskFile",
                 str(task),
                 "-WorkflowId",

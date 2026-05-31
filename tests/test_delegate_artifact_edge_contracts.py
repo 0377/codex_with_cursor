@@ -11,13 +11,13 @@ from tests.task_helpers import compliant_task
 
 
 REPO = Path(__file__).resolve().parents[1]
-SCRIPTS = REPO / "skills" / "codex-with-cc" / "scripts"
-DELEGATE = SCRIPTS / "delegate_to_claude.py"
+SCRIPTS = REPO / "skills" / "codex-with-cursor" / "scripts"
+DELEGATE = SCRIPTS / "delegate_to_cursor.py"
 VERIFY_ARTIFACTS = SCRIPTS / "verify_delegate_artifacts.py"
 sys.path.insert(0, str(SCRIPTS))
 
-from codex_with_cc_runtime.reports import text_has_required_report_headings
-from codex_with_cc_runtime.sessions import task_fingerprint
+from codex_with_cursor_runtime.reports import text_has_required_report_headings
+from codex_with_cursor_runtime.sessions import task_fingerprint
 
 
 REPORT = "\n".join(
@@ -29,7 +29,7 @@ REPORT = "\n".join(
         "implementer",
         "",
         "Summary",
-        "Fake Claude completed.",
+        "Fake Cursor Agent completed.",
         "",
         "Changed Files",
         "None",
@@ -56,8 +56,8 @@ def run_id_from_output(output: str) -> str:
     raise AssertionError(f"RunId line missing from output:\n{output}")
 
 
-def make_fake_claude_bin(root: Path) -> Path:
-    fake_bin = root / "fake-claude-bin"
+def make_fake_agent_bin(root: Path) -> Path:
+    fake_bin = root / "fake-agent-bin"
     fake_bin.mkdir(parents=True, exist_ok=True)
     assistant = json.dumps(
         {"type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": REPORT}]}},
@@ -65,7 +65,7 @@ def make_fake_claude_bin(root: Path) -> Path:
     )
     result = json.dumps({"type": "result", "subtype": "success"}, separators=(",", ":"))
     if os.name == "nt":
-        (fake_bin / "claude.cmd").write_text(
+        (fake_bin / "agent.cmd").write_text(
             "@echo off\n"
             "more > nul\n"
             f"echo {assistant}\n"
@@ -74,7 +74,7 @@ def make_fake_claude_bin(root: Path) -> Path:
             encoding="utf-8",
         )
     else:
-        script = fake_bin / "claude"
+        script = fake_bin / "agent"
         script.write_text(
             "#!/bin/sh\n"
             "cat >/dev/null\n"
@@ -86,10 +86,10 @@ def make_fake_claude_bin(root: Path) -> Path:
     return fake_bin
 
 
-def make_name_rejecting_fake_claude_bin(root: Path) -> Path:
-    fake_bin = root / "fake-name-rejecting-claude-bin"
+def make_name_rejecting_fake_agent_bin(root: Path) -> Path:
+    fake_bin = root / "fake-name-rejecting-agent-bin"
     fake_bin.mkdir(parents=True, exist_ok=True)
-    script = fake_bin / "fake_name_rejecting_claude.py"
+    script = fake_bin / "fake_name_rejecting_agent.py"
     assistant = json.dumps(
         {"type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": REPORT}]}}
     )
@@ -110,12 +110,12 @@ def make_name_rejecting_fake_claude_bin(root: Path) -> Path:
         encoding="utf-8",
     )
     if os.name == "nt":
-        (fake_bin / "claude.cmd").write_text(
+        (fake_bin / "agent.cmd").write_text(
             f'@echo off\n"{sys.executable}" "{script}" %*\n',
             encoding="utf-8",
         )
     else:
-        shim = fake_bin / "claude"
+        shim = fake_bin / "agent"
         shim.write_text(
             f"#!/bin/sh\nexec '{sys.executable}' '{script}' \"$@\"\n",
             encoding="utf-8",
@@ -124,10 +124,10 @@ def make_name_rejecting_fake_claude_bin(root: Path) -> Path:
     return fake_bin
 
 
-def make_file_report_fake_claude_bin(root: Path) -> Path:
-    fake_bin = root / "fake-file-report-claude-bin"
+def make_file_report_fake_agent_bin(root: Path) -> Path:
+    fake_bin = root / "fake-file-report-agent-bin"
     fake_bin.mkdir(parents=True, exist_ok=True)
-    script = fake_bin / "fake_file_report_claude.py"
+    script = fake_bin / "fake_file_report_agent.py"
     script.write_text(
         "\n".join(
             (
@@ -149,12 +149,12 @@ def make_file_report_fake_claude_bin(root: Path) -> Path:
         encoding="utf-8",
     )
     if os.name == "nt":
-        (fake_bin / "claude.cmd").write_text(
+        (fake_bin / "agent.cmd").write_text(
             f'@echo off\n"{sys.executable}" "{script}"\n',
             encoding="utf-8",
         )
     else:
-        shim = fake_bin / "claude"
+        shim = fake_bin / "agent"
         shim.write_text(
             f"#!/bin/sh\nexec '{sys.executable}' '{script}'\n",
             encoding="utf-8",
@@ -178,7 +178,7 @@ def run_delegate(
 ) -> subprocess.CompletedProcess[str]:
     merged_env = {
         **os.environ,
-        "CODEX_CLAUDE_CHILD_THREAD": "1",
+        "CODEX_CURSOR_CHILD_THREAD": "1",
         "PYTHONDONTWRITEBYTECODE": "1",
     }
     if env:
@@ -248,7 +248,7 @@ def test_custom_output_path_is_verified_from_config() -> None:
         root = Path(tmp)
         artifact_root = root / "artifacts"
         output_path = root / "custom-report.md"
-        fake_bin = make_fake_claude_bin(root)
+        fake_bin = make_fake_agent_bin(root)
         result = run_delegate(
             "custom output path",
             ["-OutputPath", str(output_path), "-BypassPermissions"],
@@ -264,14 +264,14 @@ def test_custom_output_path_is_verified_from_config() -> None:
         assert f"Artifact verification passed for RunId: {run_id}" in verified.stdout
 
 
-def test_delegate_does_not_pass_removed_claude_name_option() -> None:
-    with tempfile.TemporaryDirectory(prefix="codex_with_cc_no_claude_name_arg_") as tmp:
+def test_delegate_does_not_pass_removed_cursor_name_option() -> None:
+    with tempfile.TemporaryDirectory(prefix="codex_with_cc_no_cursor_name_arg_") as tmp:
         root = Path(tmp)
         artifact_root = root / "artifacts"
-        fake_bin = make_name_rejecting_fake_claude_bin(root)
+        fake_bin = make_name_rejecting_fake_agent_bin(root)
 
         result = run_delegate(
-            "current Claude CLI compatibility",
+            "current Cursor Agent CLI compatibility",
             ["-BypassPermissions", "-MaxRetryCount", "0"],
             artifact_root,
             {"PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}"},
@@ -300,8 +300,8 @@ def test_default_artifact_root_falls_back_to_codex_home_when_project_path_is_unu
         root = Path(tmp)
         project_root = root / "project"
         codex_home = root / "codex-home"
-        blocked_artifact_root = project_root / ".codex" / "codex_with_cc" / "claude-delegate"
-        task_root = project_root / ".codex" / "codex_with_cc" / "tasks"
+        blocked_artifact_root = project_root / ".codex" / "codex_with_cursor" / "cursor-delegate"
+        task_root = project_root / ".codex" / "codex_with_cursor" / "tasks"
         task_root.mkdir(parents=True)
         blocked_artifact_root.parent.mkdir(parents=True, exist_ok=True)
         blocked_artifact_root.write_text("not a directory", encoding="utf-8")
@@ -313,7 +313,7 @@ def test_default_artifact_root_falls_back_to_codex_home_when_project_path_is_unu
             {
                 **os.environ,
                 "CODEX_HOME": str(codex_home),
-                "CODEX_CLAUDE_CHILD_THREAD": "1",
+                "CODEX_CURSOR_CHILD_THREAD": "1",
                 "PYTHONDONTWRITEBYTECODE": "1",
             },
         )
@@ -360,7 +360,7 @@ def test_artifact_verification_rejects_status_final_result_mismatch() -> None:
         result = run_delegate("status mismatch contract", ["-DryRun"], artifact_root)
         assert result.returncode == 0, result.stdout + result.stderr
         run_id = run_id_from_output(result.stdout)
-        output = artifact_root / f"claude_{run_id}.md"
+        output = artifact_root / f"cursor_{run_id}.md"
         output.write_text(output.read_text(encoding="utf-8").replace("Final Result\nDONE", "Final Result\nFAIL"), encoding="utf-8")
 
         verified = verify_artifacts(run_id, artifact_root)
@@ -375,7 +375,7 @@ def test_artifact_verification_rejects_report_role_mismatch() -> None:
         result = run_delegate("role mismatch contract", ["-DryRun"], artifact_root, role="researcher")
         assert result.returncode == 0, result.stdout + result.stderr
         run_id = run_id_from_output(result.stdout)
-        output = artifact_root / f"claude_{run_id}.md"
+        output = artifact_root / f"cursor_{run_id}.md"
         output.write_text(output.read_text(encoding="utf-8").replace("Role\nresearcher", "Role\nimplementer"), encoding="utf-8")
 
         verified = verify_artifacts(run_id, artifact_root)
@@ -390,7 +390,7 @@ def test_artifact_verification_rejects_text_before_status() -> None:
         result = run_delegate("report preamble contract", ["-DryRun"], artifact_root)
         assert result.returncode == 0, result.stdout + result.stderr
         run_id = run_id_from_output(result.stdout)
-        output = artifact_root / f"claude_{run_id}.md"
+        output = artifact_root / f"cursor_{run_id}.md"
         output.write_text("Here is the report.\n\n" + output.read_text(encoding="utf-8"), encoding="utf-8")
 
         verified = verify_artifacts(run_id, artifact_root)
@@ -399,25 +399,25 @@ def test_artifact_verification_rejects_text_before_status() -> None:
         assert "required report headings" in (verified.stdout + verified.stderr)
 
 
-def test_missing_claude_writes_complete_verifiable_failure_artifacts() -> None:
-    with tempfile.TemporaryDirectory(prefix="codex_with_cc_missing_claude_") as tmp:
+def test_missing_cursor_writes_complete_verifiable_failure_artifacts() -> None:
+    with tempfile.TemporaryDirectory(prefix="codex_with_cc_missing_cursor_") as tmp:
         artifact_root = Path(tmp) / "artifacts"
-        result = run_delegate("missing claude artifact contract", [], artifact_root, {"PATH": ""})
+        result = run_delegate("missing agent artifact contract", [], artifact_root, {"PATH": ""})
         assert result.returncode != 0
         run_id = run_id_from_output(result.stdout)
 
         verified = verify_artifacts(run_id, artifact_root)
 
         assert verified.returncode == 0, verified.stdout + verified.stderr
-        output = (artifact_root / f"claude_{run_id}.md").read_text(encoding="utf-8")
-        assert "STARTUP_FAILURE: Claude Code CLI was not found" in output
+        output = (artifact_root / f"cursor_{run_id}.md").read_text(encoding="utf-8")
+        assert "STARTUP_FAILURE: Cursor Agent CLI was not found" in output
 
 
 def test_structured_output_file_allows_unstructured_final_summary() -> None:
     with tempfile.TemporaryDirectory(prefix="codex_with_cc_file_report_") as tmp:
         root = Path(tmp)
         artifact_root = root / "artifacts"
-        fake_bin = make_file_report_fake_claude_bin(root)
+        fake_bin = make_file_report_fake_agent_bin(root)
         result = run_delegate(
             "write report file and summarize",
             ["-BypassPermissions", "-MaxRetryCount", "0"],
@@ -430,7 +430,7 @@ def test_structured_output_file_allows_unstructured_final_summary() -> None:
         verified = verify_artifacts(run_id, artifact_root)
 
         assert verified.returncode == 0, verified.stdout + verified.stderr
-        output = (artifact_root / f"claude_{run_id}.md").read_text(encoding="utf-8")
+        output = (artifact_root / f"cursor_{run_id}.md").read_text(encoding="utf-8")
         assert output == REPORT
 
 

@@ -9,12 +9,12 @@ from pathlib import Path
 from tests.task_helpers import compliant_task
 
 repo = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(repo / "skills" / "codex-with-cc" / "scripts"))
-from codex_with_cc_runtime.prompts import build_prompt
-from codex_with_cc_runtime.reports import build_report_repair_prompt
+sys.path.insert(0, str(repo / "skills" / "codex-with-cursor" / "scripts"))
+from codex_with_cursor_runtime.prompts import build_prompt
+from codex_with_cursor_runtime.reports import build_report_repair_prompt
 
-delegate = repo / "skills" / "codex-with-cc" / "scripts" / "delegate_to_claude.py"
-real_chain = repo / "skills" / "codex-with-cc" / "scripts" / "run_real_delegate_chain_validation.py"
+delegate = repo / "skills" / "codex-with-cursor" / "scripts" / "delegate_to_cursor.py"
+real_chain = repo / "skills" / "codex-with-cursor" / "scripts" / "run_real_delegate_chain_validation.py"
 
 
 def test_delegate_prompt_and_real_chain_contract() -> None:
@@ -48,7 +48,7 @@ def test_delegate_prompt_and_real_chain_contract() -> None:
             cwd=repo,
             text=True,
             capture_output=True,
-            env={**os.environ, "CODEX_CLAUDE_CHILD_THREAD": "1", "PYTHONDONTWRITEBYTECODE": "1"},
+            env={**os.environ, "CODEX_CURSOR_CHILD_THREAD": "1", "PYTHONDONTWRITEBYTECODE": "1"},
         )
         if prompt_run.returncode != 0:
             raise AssertionError(prompt_run.stdout + prompt_run.stderr)
@@ -91,11 +91,17 @@ def test_delegate_prompt_and_real_chain_contract() -> None:
         task_file = next((validation_root / "contract-check" / "tasks").rglob("*anchor-read-protocol.md"))
         task_text = task_file.read_text(encoding="utf-8")
         assert '-Scope "' in task_text
-        assert 'windows_scripts/delegate_to_claude.ps1"' in task_text
-        assert 'CODEX_WITH_CC.md"' in task_text
+        entry = "windows_scripts/delegate_to_cursor.ps1" if os.name == "nt" else "macos_scripts/delegate_to_cursor.sh"
+        assert f'{entry}"' in task_text
+        assert 'CODEX_WITH_CURSOR.md"' in task_text
         assert "-Tests " not in task_text
         assert "Do not run verify_delegate_artifacts against this run's own live artifacts" in task_text
-        assert "verify_delegate_artifacts.ps1 -RunId <anchor-run-id>" in chain_run.stdout
+        verify_entry = (
+            "verify_delegate_artifacts.ps1 -RunId <anchor-run-id>"
+            if os.name == "nt"
+            else "verify_delegate_artifacts.sh -RunId <anchor-run-id>"
+        )
+        assert verify_entry in chain_run.stdout
 
 
 def test_final_verifier_prompt_does_not_hide_review_gate_duty() -> None:
@@ -104,7 +110,7 @@ def test_final_verifier_prompt_does_not_hide_review_gate_duty() -> None:
         output_path=repo / "build" / "unused-final-verifier-output.md",
         run_id="final-verifier-run",
         mode="final-verifier",
-        scope=["build/live-impl-flow/artifacts/claude_*.md"],
+        scope=["build/live-impl-flow/artifacts/cursor_*.md"],
         tests=["pytest -q"],
         task_text="Confirm implementer reviews and final workflow acceptance.",
         workflow_id="wf-final-verifier-prompt",
