@@ -8,12 +8,20 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from .cursor_cli import new_cursor_cli_args, resolve_agent_executable, retry_decision, update_stream_capture, failure_summary
+from .cursor_cli import (
+    new_cursor_cli_args,
+    resolve_agent_executable,
+    retry_decision,
+    update_stream_capture,
+    failure_summary,
+    validate_cursor_model,
+)
 from .common import ARTIFACT_SCHEMA_VERSION, CHILD_MARKER_NAME, CHILD_MARKER_VALUE, INVOCATION_CONTRACT, DelegateError, now_iso
 from .io_utils import read_text, test_path_writable, write_json, write_text
 from .locks import FileLock, acquire_file_lock
@@ -23,6 +31,25 @@ from .reports import build_report_repair_prompt, get_output_resolution, path_has
 from .sessions import SessionLease, acquire_session_lease, effective_session_key, normalize_delegate_list, release_session_lease, reset_session_lease_for_fresh_session, safe_session_key, task_fingerprint
 from .task_contract import validate_task_file_contract
 from .workflow import normalize_role, safe_task_id, update_workflow_record, workflow_path
+
+
+
+class _StatusWriteThrottle:
+    def __init__(self, status_path: Path, status: dict[str, Any], *, min_interval_s: float = 0.5, min_line_delta: int = 50) -> None:
+        self.status_path = status_path
+        self.status = status
+        self.min_interval_s = min_interval_s
+        self.min_line_delta = min_line_delta
+        self._lines_since_write = 0
+        self._last_write_at = 0.0
+
+    def bump(self, *, force: bool = False) -> None:
+        self._lines_since_write += 1
+        now = time.monotonic()
+        if force or self._lines_since_write >= self.min_line_delta or (now - self._last_write_at) >= self.min_interval_s:
+            write_json(self.status_path, self.status)
+            self._lines_since_write = 0
+            self._last_write_at = now
 
 
 
@@ -468,6 +495,8 @@ def run_delegate(ns: argparse.Namespace) -> int:
         agent_bin = resolve_agent_executable()
         if not agent_bin:
             raise DelegateError("Cursor Agent CLI was not found. Install or expose the 'agent' command first.")
+        if not bool(ns.skip_model_check):
+            validate_cursor_model(agent_bin, ns.model)
 
         status["status"] = "running"
         write_json(status_path, status)
@@ -483,6 +512,7 @@ def run_delegate(ns: argparse.Namespace) -> int:
         failure_summary_text = ""
         raw_stream_path.parent.mkdir(parents=True, exist_ok=True)
         trace_path.parent.mkdir(parents=True, exist_ok=True)
+        status_throttle = _StatusWriteThrottle(status_path, status)
         with raw_stream_path.open("w", encoding="utf-8") as raw_handle, trace_path.open("w", encoding="utf-8") as trace_handle:
             while attempt < max_attempts:
                 attempt += 1
@@ -513,7 +543,12 @@ def run_delegate(ns: argparse.Namespace) -> int:
                     lease.session_id,
                     lease.resume,
                     bool(ns.bypass_permissions),
+                    str(root),
                 )
+                cursor_cli_argv = [agent_bin, *cursor_args]
+                attempt_record["cursorCliArgv"] = cursor_cli_argv
+                config["cursorCliExecutable"] = agent_bin
+                config["lastCursorCliArgv"] = cursor_cli_argv
                 if attempt == 1:
                     config["initialSessionId"] = lease.session_id
                     config["initialResume"] = lease.resume
@@ -533,7 +568,7 @@ def run_delegate(ns: argparse.Namespace) -> int:
                 trace_handle.flush()
 
                 process = subprocess.Popen(
-                    [agent_bin, *cursor_args],
+                    cursor_cli_argv,
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
@@ -566,7 +601,8 @@ def run_delegate(ns: argparse.Namespace) -> int:
                     trace_handle.flush()
                     status["linesWritten"] = int(status.get("linesWritten", 0)) + 1
                     status["lastOutputAt"] = now_iso()
-                    write_json(status_path, status)
+                    status_throttle.bump()
+                status_throttle.bump(force=True)
                 exit_code = process.wait()
                 observed_session = capture_state.get("cursorSessionId")
                 if observed_session and str(observed_session) != lease.session_id:

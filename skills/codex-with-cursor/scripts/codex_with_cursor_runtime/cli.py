@@ -6,6 +6,7 @@ from typing import Callable
 
 from .artifacts import run_verify_artifacts, run_verify_chain, run_verify_workflow
 from .common import DelegateError, WORKER_ROLES
+from .contract import default_cursor_model
 from .delegate import run_delegate
 from .real_chain import run_real_chain_validation
 from .selftests import run_test_runtime, run_test_session_pool
@@ -51,7 +52,7 @@ def add_delegate_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("-ReviewForTaskId", dest="review_for_task_id")
     parser.add_argument("-ReviewKind", dest="review_kind", type=choice_arg(["spec", "quality"]))
     parser.add_argument("-DependsOn", dest="depends_on", action="append", default=[])
-    parser.add_argument("-Model", dest="model", default="sonnet")
+    parser.add_argument("-Model", dest="model", default=default_cursor_model())
     parser.add_argument("-Name", dest="name")
     parser.add_argument("-NamePrefix", dest="name_prefix", default="codex-delegate")
     parser.add_argument("-MaxBudgetUsd", dest="max_budget_usd")
@@ -68,6 +69,7 @@ def add_delegate_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("-LockPollMilliseconds", dest="lock_poll_milliseconds", type=int, default=500)
     parser.add_argument("-MaxRetryCount", dest="max_retry_count", type=int_range_arg("MaxRetryCount", 0, 100), default=5)
     parser.add_argument("-BypassPermissions", dest="bypass_permissions", action="store_true")
+    parser.add_argument("-SkipModelCheck", dest="skip_model_check", action="store_true")
     parser.add_argument("-DryRun", dest="dry_run", action="store_true")
 
 

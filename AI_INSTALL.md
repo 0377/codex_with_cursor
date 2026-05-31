@@ -46,6 +46,19 @@ Codex 主线程 -> Codex spawn_agent 子线程 -> 已安装插件中的 delegate
 - 单次运行使用 `verify_delegate_run` 或 `verify_delegate_artifacts` 验证；整条工作流使用 `verify_delegate_workflow` 验证。
 - implementer workflow 必须有 accepted `spec` reviewer、accepted `quality` reviewer 和 accepted `final-verifier`；非 dry-run 的 `DONE` 报告必须覆盖所有 `-Tests` 命令和结果；并行 implementer 的 `-Scope` 不能重叠。
 
+### 三层命令参数（勿混用）
+
+| 层级 | 入口 | 典型参数 | 是否 Cursor CLI |
+|------|------|----------|-----------------|
+| Codex 子线程 | `spawn_agent` | `model: gpt-5.3-codex`, `reasoning_effort: medium`, `fork_context: false` | 否 |
+| 委派包装器 | `delegate_to_cursor.*` | `-TaskFile`, `-WorkflowId`, `-TaskId`, `-Role`, `-SessionKey` 等 | 否 |
+| Cursor 执行层 | `agent` | `--print`, `--output-format stream-json`, `--model`, `--resume`, `--yolo`, `--trust` | 是 |
+
+- 未传 `-Model` 时，委派默认使用 `composer-2.5`（可用 `agent --list-models` 查看账号可用 ID 并覆盖）。
+- `-Model` 仅映射为 `agent --model <id>`，与 Codex `spawn_agent` 的 `model` 无关。
+- 运行时只解析 `agent` 命令，不回退到 `cursor` 可执行文件。
+- 每次运行在 `config_<RunId>.json` 中记录 `lastCursorCliArgv` 便于排错。
+
 插件声明 `./hooks/hooks.json`。宿主启用 Codex hooks 后，`SessionStart` 注入完整契约，`UserPromptSubmit` 遇到触发词时再次注入，`PreToolUse` 拦截直接 `agent`/`cursor`、主线程直接 `delegate_to_cursor.*`、缺少 `CODEX_CURSOR_CHILD_THREAD=1`、缺少 `-TaskFile`、缺少 workflow metadata、缺少 `-SessionKey`、旧式 `-Task`、旧式 `-Mode`、reviewer 缺少 review metadata、以及并行写任务无 `-Scope`。
 
 ## 分发源
@@ -210,6 +223,8 @@ export CODEX_CURSOR_CHILD_THREAD=1
 ```
 
 dry-run 成功后应看到 `config_<RunId>.json`、`status_<RunId>.json`、`prompt_<RunId>.md`、`cursor_<RunId>.md`、`workflow_install-check.json`。
+
+可选：在仓库根目录执行 `python -m pytest tests/test_cursor_agent_cli_smoke.py -q`（需已安装 `pytest` 与 `agent`）做 Cursor CLI 冒烟校验。
 
 ## 失败处理
 

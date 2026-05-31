@@ -69,9 +69,11 @@ def test_user_prompt_submit_reinforces_contract_for_subagent_requests() -> None:
     context = hook_specific(output)["additionalContext"]
 
     assert "<EXTREMELY_IMPORTANT>" in context
-    assert "Below is the full content of your 'codex-with-cursor' skill" in context
-    assert "codex-with-cursor" in context
+    assert "UserPromptSubmit" in context
+    assert "codex-with-cursor routing reminder" in context
+    assert "composer-2.5" in context
     assert "default Codex subagent" in context
+    assert "Below is the full content of your 'codex-with-cursor' skill" not in context
 
 
 def test_user_prompt_submit_ignores_unrelated_prompts() -> None:

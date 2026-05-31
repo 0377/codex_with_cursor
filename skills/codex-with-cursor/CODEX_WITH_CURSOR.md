@@ -155,6 +155,26 @@ Use `verify_delegate_run.*` or `verify_delegate_artifacts.*` for each run, `veri
 
 `<installed-workflow-root>` means the installed `skills/codex-with-cursor` directory, for example `<codex-home>/plugins/cache/.../codex-with-cursor/<version-or-hash>/skills/codex-with-cursor` after `codex plugin install` from [this repository](https://github.com/0377/codex_with_cursor). Do not use the package root `<version-or-hash>` directory.
 
+## Command-Line Parameter Layers
+
+Do not mix the three parameter systems below. Only the bottom layer is the Cursor Agent CLI (`agent`).
+
+| Layer | Who invokes it | Example parameters | Maps to Cursor CLI? |
+|-------|----------------|--------------------|---------------------|
+| Codex child thread | Main thread `spawn_agent` | `model: gpt-5.3-codex`, `reasoning_effort: medium`, `fork_context: false` | No |
+| Delegate wrapper | Child thread `delegate_to_cursor.*` | `-TaskFile`, `-WorkflowId`, `-TaskId`, `-Role`, `-SessionKey`, optional `-Model`, `-Scope`, `-BypassPermissions` | No (orchestration only) |
+| Cursor Agent CLI | `delegate_to_cursor` runtime | `--print`, `--output-format stream-json`, `--model`, `--resume`, `--yolo`, `--trust` | Yes |
+
+Delegate defaults and Cursor mapping:
+
+- `-Model` defaults to `composer-2.5` when omitted. Override with any ID from `agent --list-models`.
+- `-Model` becomes `agent --model <id>`. It is not a Codex `spawn_agent` model.
+- `-BypassPermissions` adds `--yolo` and `--trust` on the `agent` invocation.
+- The worker prompt is sent on stdin, not as positional `agent` arguments.
+- Forbidden on the `agent` invocation: `--effort`, legacy `--name`.
+- Only the `agent` executable is resolved; the `cursor` shim is not used as a fallback.
+- Each run records `cursorCliExecutable`, `lastCursorCliArgv`, and per-attempt `cursorCliArgv` in `config_<RunId>.json` / `status_<RunId>.json`.
+
 ## Standard Worker Command
 Normally run this inside a Codex child thread. If the Codex sandbox or delegated runner cannot execute it, use the trusted local terminal fallback above.
 

@@ -7,7 +7,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from tests.task_helpers import compliant_task
+from tests.task_helpers import FAKE_AGENT_LIST_MODELS_PY, FAKE_AGENT_LIST_MODELS_SH, compliant_task
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -77,6 +77,7 @@ def make_fake_agent_bin(root: Path) -> Path:
         script = fake_bin / "agent"
         script.write_text(
             "#!/bin/sh\n"
+            f"{FAKE_AGENT_LIST_MODELS_SH}"
             "cat >/dev/null\n"
             f"printf '%s\\n' '{assistant}'\n"
             f"printf '%s\\n' '{result}'\n",
@@ -98,6 +99,7 @@ def make_name_rejecting_fake_agent_bin(root: Path) -> Path:
         "\n".join(
             (
                 "import sys",
+                FAKE_AGENT_LIST_MODELS_PY.strip(),
                 "",
                 "sys.stdin.read()",
                 "if '--name' in sys.argv[1:]:",
@@ -134,6 +136,7 @@ def make_file_report_fake_agent_bin(root: Path) -> Path:
                 "import json",
                 "import re",
                 "import sys",
+                FAKE_AGENT_LIST_MODELS_PY.strip(),
                 "",
                 f"report = {REPORT!r}",
                 "prompt = sys.stdin.read()",
@@ -156,7 +159,7 @@ def make_file_report_fake_agent_bin(root: Path) -> Path:
     else:
         shim = fake_bin / "agent"
         shim.write_text(
-            f"#!/bin/sh\nexec '{sys.executable}' '{script}'\n",
+            f"#!/bin/sh\nexec '{sys.executable}' '{script}' \"$@\"\n",
             encoding="utf-8",
         )
         shim.chmod(shim.stat().st_mode | stat.S_IEXEC)
@@ -323,7 +326,7 @@ def test_default_artifact_root_falls_back_to_codex_home_when_project_path_is_unu
         assert "Default artifact root is not writable" in output
         artifact_root_line = next(line for line in result.stdout.splitlines() if line.startswith("Artifact Root:"))
         artifact_root = Path(artifact_root_line.split(":", 1)[1].strip())
-        assert codex_home in artifact_root.parents
+        assert codex_home.resolve() in artifact_root.resolve().parents
         assert artifact_root != blocked_artifact_root
         run_id = run_id_from_output(result.stdout)
         config = json.loads((artifact_root / f"config_{run_id}.json").read_text(encoding="utf-8"))

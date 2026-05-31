@@ -34,7 +34,7 @@ def build_prompt(
     scope_text = "\n".join(f"- {item}" for item in scope) if scope else "- No explicit file scope was provided. Infer the narrowest safe scope from the task and current code."
     tests_text = "\n".join(f"- {item}" for item in tests) if tests else "- Run the smallest relevant verification you can identify from the change."
     role_template_text = role_template(role) or "- Follow the generic codex-with-cursor worker rules for this role."
-    worker_protocol_text = f"""- This prompt is already the only allowed Claude worker context for this delegated run.
+    worker_protocol_text = f"""- This prompt is already the only allowed Cursor Agent worker context for this delegated run.
 - Never call `{primary_entry}`, `{windows_entry}`, `{macos_entry}`, `agent`, or `spawn_agent` recursively from inside this worker.
 - Treat `{rel}/CODEX_WITH_CURSOR.md` as the workflow contract to inspect when the task scope requires it, not as an execution recipe for this worker.
 - If the task is an audit or validation, inspect the scoped files and run the listed verification commands directly instead of creating nested delegate runs.
@@ -115,7 +115,7 @@ Hard requirements:
 - Never claim verification passed unless you actually ran the command and saw it pass.
 - For implementation work, summarize the test or self-review evidence that demonstrates the assigned behavior, not broad unrelated cleanup.
 - Process and summarize your own CLI output. The Codex child thread will forward your final structured result; it should not reinterpret long logs for you.
-- Treat this script as a child-thread worker entry only. Do not reinterpret it as permission for the Codex main thread to invoke Claude directly.
+- Treat this script as a child-thread worker entry only. Do not reinterpret it as permission for the Codex main thread to invoke Cursor Agent CLI (`agent`) directly.
 - Keep raw verbose command output in the transcript/log instead of duplicating it.
 - Finish with this exact report skeleton. Status and Final Result must be the same token. Role must be `{role}`. Do not add text before `Status`; do not bold or decorate these headings:
 Status

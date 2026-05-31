@@ -3,13 +3,22 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import subprocess
 from typing import Any, Iterable
+
+from .common import DelegateError
 
 from .reports import text_has_required_report_headings
 
 
 def resolve_agent_executable() -> str | None:
-    return shutil.which("agent") or shutil.which("cursor")
+    """Resolve the Cursor Agent CLI binary.
+
+    Only ``agent`` is supported. The legacy ``cursor`` shim is not used because
+    headless flags such as ``--print`` and ``--output-format stream-json`` are
+    not guaranteed to work on it.
+    """
+    return shutil.which("agent")
 
 
 def text_blocks(content: Any) -> list[str]:
@@ -94,6 +103,7 @@ def new_cursor_cli_args(
     session_id: str,
     resume: bool,
     bypass_permissions: bool,
+    workspace: str | None = None,
 ) -> list[str]:
     args = [
         "--print",
@@ -102,11 +112,36 @@ def new_cursor_cli_args(
         "--model",
         model,
     ]
+    if workspace:
+        args.extend(["--workspace", workspace])
     if resume and session_id:
         args.extend(["--resume", session_id])
     if bypass_permissions:
         args.extend(["--yolo", "--trust"])
     return args
+
+
+def validate_cursor_model(agent_bin: str, model: str) -> None:
+    try:
+        result = subprocess.run(
+            [agent_bin, "--list-models"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+            check=False,
+        )
+    except OSError as exc:
+        raise DelegateError(f"Failed to run agent --list-models: {exc}") from exc
+    output = f"{result.stdout}\n{result.stderr}"
+    if result.returncode != 0:
+        raise DelegateError(f"agent --list-models failed with exit code {result.returncode}. {output.strip()}")
+    if model not in output:
+        raise DelegateError(
+            f"Cursor model {model!r} was not found by agent --list-models. "
+            "Pass -Model with an ID from agent --list-models or use -SkipModelCheck to bypass."
+        )
 
 
 def non_json_raw_lines(raw_lines: Iterable[str]) -> list[str]:

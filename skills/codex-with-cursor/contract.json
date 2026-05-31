@@ -66,6 +66,14 @@
   "parallelRequiredArgs": [
     "-Scope"
   ],
+  "cursorAgent": {
+    "executable": "agent",
+    "defaultModel": "composer-2.5",
+    "forbiddenArgs": [
+      "--effort",
+      "--name"
+    ]
+  },
   "legacy": {
     "forbiddenArgs": [
       "-Task",

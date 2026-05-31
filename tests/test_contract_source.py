@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import subprocess
@@ -17,7 +18,9 @@ SCRIPTS = WORKFLOW / "scripts"
 DELEGATE = SCRIPTS / "delegate_to_cursor.py"
 sys.path.insert(0, str(SCRIPTS))
 
+from codex_with_cursor_runtime.cli import add_delegate_args
 from codex_with_cursor_runtime.common import REPORT_HEADINGS, REPORT_STATUS_VALUES, WORKER_ROLES
+from codex_with_cursor_runtime.contract import default_cursor_model
 
 
 def compliant_task(text: str = "Inspect the contract-driven task file gate.") -> str:
@@ -102,6 +105,13 @@ def test_contract_json_is_single_source_for_runtime_constants() -> None:
     assert contract["spawn"]["forkContext"] is False
     assert "-Task" in contract["legacy"]["forbiddenArgs"]
     assert "-Mode" in contract["legacy"]["forbiddenArgs"]
+    assert contract["cursorAgent"]["executable"] == "agent"
+    assert contract["cursorAgent"]["defaultModel"] == "composer-2.5"
+    assert contract["cursorAgent"]["defaultModel"] == default_cursor_model()
+    delegate_parser = argparse.ArgumentParser()
+    add_delegate_args(delegate_parser)
+    model_default = next(action.default for action in delegate_parser._actions if action.dest == "model")
+    assert model_default == contract["cursorAgent"]["defaultModel"]
 
 
 def test_hook_gate_reads_spawn_requirements_from_contract_json() -> None:

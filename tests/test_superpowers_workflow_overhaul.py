@@ -8,7 +8,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from tests.task_helpers import compliant_task
+from tests.task_helpers import FAKE_AGENT_LIST_MODELS_SH, compliant_task
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -117,6 +117,7 @@ def make_fake_agent_bin(root: Path, role: str, verification: str) -> Path:
         script = fake_bin / "agent"
         script.write_text(
             "#!/usr/bin/env sh\n"
+            f"{FAKE_AGENT_LIST_MODELS_SH}"
             "cat >/dev/null\n"
             f"printf '%s\\n' '{assistant_record}'\n"
             f"printf '%s\\n' '{result_record}'\n",

@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
-from tests.task_helpers import compliant_task
+import pytest
+
+from tests.task_helpers import FAKE_AGENT_LIST_MODELS_SH, compliant_task
+
+pytestmark = [
+    pytest.mark.requires_pwsh,
+    pytest.mark.skipif(shutil.which("pwsh") is None, reason="pwsh not installed"),
+]
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -92,14 +100,30 @@ def make_fake_agent_bin(root: Path) -> Path:
         separators=(",", ":"),
     )
     result_record = json.dumps({"type": "result", "subtype": "success"}, separators=(",", ":"))
-    (fake_bin / "agent.cmd").write_text(
-        '@echo off\n'
-        'more > nul\n'
-        f"echo {assistant_record}\n"
-        f"echo {result_record}\n"
-        "exit /b 0\n",
-        encoding="utf-8",
-    )
+    if os.name == "nt":
+        (fake_bin / "agent.cmd").write_text(
+            "@echo off\n"
+            "if \"%1\"==\"--list-models\" (\n"
+            "  echo composer-2.5\n"
+            "  exit /b 0\n"
+            ")\n"
+            "more > nul\n"
+            f"echo {assistant_record}\n"
+            f"echo {result_record}\n"
+            "exit /b 0\n",
+            encoding="utf-8",
+        )
+    else:
+        script = fake_bin / "agent"
+        script.write_text(
+            "#!/bin/sh\n"
+            f"{FAKE_AGENT_LIST_MODELS_SH}"
+            "cat >/dev/null\n"
+            f"printf '%s\\n' '{assistant_record}'\n"
+            f"printf '%s\\n' '{result_record}'\n",
+            encoding="utf-8",
+        )
+        script.chmod(0o755)
     return fake_bin
 
 
@@ -134,7 +158,7 @@ def test_delegate_wrapper_is_thin_and_forwards_to_python() -> None:
             "-Tests",
             "pytest;git diff --check",
             "-Model",
-            "sonnet",
+            "composer-2.5",
             "-NamePrefix",
             "wrapper-test",
             "-MaxBudgetUsd",
@@ -167,6 +191,7 @@ def test_delegate_wrapper_is_thin_and_forwards_to_python() -> None:
         prompt = (artifact_root / f"prompt_{run_id}.md").read_text(encoding="utf-8")
 
         assert config["mode"] == "researcher"
+        assert config["model"] == "composer-2.5"
         assert config["maxBudgetUsd"] == "0.35"
         assert config["allowParallel"] is True
         assert config["sessionMode"] == "ParallelPool"

@@ -1,0 +1,15 @@
+[project]
+name = "codex-with-cursor"
+version = "0.0.0"
+description = "Codex plugin workflow for delegating child-agent work to Cursor Agent CLI"
+readme = "README.md"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "requires_pwsh: requires PowerShell 7+ (pwsh) on PATH",
+]

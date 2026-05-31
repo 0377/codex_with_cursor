@@ -251,7 +251,13 @@ def run_test_runtime(_: argparse.Namespace) -> int:
         if os.name == "nt":
             fake_body = '@echo off\nmore > nul\necho {"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"I inspected the tests."}]}}\necho {"type":"result","subtype":"success"}\nexit /b 0\n'
         else:
-            fake_body = '#!/bin/sh\necho \'{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"I inspected the tests."}]}}\'\necho \'{"type":"result","subtype":"success"}\'\nexit 0\n'
+            fake_body = (
+                "#!/bin/sh\n"
+                'if [ "$1" = "--list-models" ]; then printf \'%s\\n\' \'composer-2.5\'; exit 0; fi\n'
+                'echo \'{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"I inspected the tests."}]}}\'\n'
+                'echo \'{"type":"result","subtype":"success"}\'\n'
+                "exit 0\n"
+            )
         fake_bin = make_fake_agent_bin(temp_root, fake_body)
         run_root = temp_root / "unstructured"
         env = {CHILD_MARKER_NAME: "1", "PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}"}
@@ -337,6 +343,9 @@ def run_test_runtime(_: argparse.Namespace) -> int:
                     (
                         "import sys",
                         "from pathlib import Path",
+                        "if '--list-models' in sys.argv:",
+                        "    print('composer-2.5')",
+                        "    raise SystemExit(0)",
                         f"state = Path({str(retry_state)!r})",
                         f"unstructured = {unstructured_record!r}",
                         f"structured = {structured_record!r}",
@@ -355,7 +364,7 @@ def run_test_runtime(_: argparse.Namespace) -> int:
             retry_fake_bin = temp_root / "fake-retry-agent-bin"
             retry_fake_bin.mkdir(parents=True, exist_ok=True)
             shim = retry_fake_bin / "agent"
-            shim.write_text(f"#!/bin/sh\nexec '{sys.executable}' '{helper}'\n", encoding="utf-8")
+            shim.write_text(f"#!/bin/sh\nexec '{sys.executable}' '{helper}' \"$@\"\n", encoding="utf-8")
             shim.chmod(shim.stat().st_mode | stat.S_IXUSR)
         retry_root = temp_root / "unstructured-retry"
         retry_env = {CHILD_MARKER_NAME: "1", "PATH": f"{retry_fake_bin}{os.pathsep}{os.environ.get('PATH', '')}"}

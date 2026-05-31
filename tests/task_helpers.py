@@ -1,5 +1,20 @@
 from __future__ import annotations
 
+FAKE_AGENT_LIST_MODELS_PY = """
+if '--list-models' in sys.argv:
+    print('composer-2.5')
+    raise SystemExit(0)
+"""
+
+FAKE_AGENT_LIST_MODELS_SH = """
+for arg in "$@"; do
+  if [ "$arg" = "--list-models" ]; then
+    printf '%s\\n' 'composer-2.5'
+    exit 0
+  fi
+done
+"""
+
 
 def compliant_task(text: str, verification: str = "dry-run artifact generation completed") -> str:
     return f"""# Delegated Task

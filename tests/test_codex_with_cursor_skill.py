@@ -151,7 +151,9 @@ def test_workflow_docs_do_not_expose_version_branding() -> None:
         if not path.is_file():
             continue
         rel = path.relative_to(repo)
-        if rel.parts[0] in {".git", "build", ".pytest_cache", "__pycache__"}:
+        if rel.parts[0] in {".git", "build", ".pytest_cache", "__pycache__", ".venv"}:
+            continue
+        if ".venv" in rel.parts:
             continue
         if any(part == "__pycache__" for part in rel.parts):
             continue

@@ -79,7 +79,7 @@ In the main Codex thread:
 
 ## Worker Report Contract
 
-Every Claude worker must finish with these exact headings:
+Every Cursor Agent worker must finish with these exact headings:
 
 ```text
 Status

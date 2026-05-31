@@ -48,7 +48,7 @@ def run_real_chain_validation(ns: argparse.Namespace) -> int:
             "PrimaryAnchor",
             "-SessionMode PrimaryAnchor -AllowParallel",
             [delegate_entry, f"{rel}/CODEX_WITH_CURSOR.md"],
-            "只读验证任务：通过 Codex spawn_agent 子线程承载 Claude worker，审查 delegate entrypoint 与 session pool 的主线锚点行为。",
+            "只读验证任务：通过 Codex spawn_agent 子线程承载 Cursor Agent worker，审查 delegate entrypoint 与 session pool 的主线锚点行为。",
         ),
         (
             "parallel-artifact-audit.md",
@@ -136,7 +136,7 @@ Session Key: {session_key}
 
 Required Codex orchestration rules:
 - The Codex main thread may only create spawn_agent child threads and collect results.
-- Every Claude worker must run inside a child thread with:
+- Every Cursor Agent worker must run inside a child thread with:
   - model: gpt-5.3-codex
   - reasoning_effort: medium
   - fork_context: false

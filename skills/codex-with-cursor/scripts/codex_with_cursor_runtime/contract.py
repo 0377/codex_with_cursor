@@ -18,3 +18,16 @@ def contract_list(name: str) -> tuple[str, ...]:
     if not isinstance(value, list):
         return ()
     return tuple(str(item) for item in value)
+
+
+def cursor_agent_contract() -> dict[str, Any]:
+    value = load_contract().get("cursorAgent", {})
+    return value if isinstance(value, dict) else {}
+
+
+def default_cursor_model() -> str:
+    return str(cursor_agent_contract().get("defaultModel") or "composer-2.5")
+
+
+def cursor_agent_executable() -> str:
+    return str(cursor_agent_contract().get("executable") or "agent")

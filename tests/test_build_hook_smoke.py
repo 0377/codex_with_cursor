@@ -162,7 +162,10 @@ def test_build_project_smoke_runs_hook_gate_and_delegate_dry_run() -> None:
         "UserPromptSubmit",
         {"hook_event_name": "UserPromptSubmit", "prompt": "请开启子代理并行委派两个 worker 处理"},
     )
-    assert "delegate_to_cursor" in prompt_output["hookSpecificOutput"]["additionalContext"]
+    prompt_context = prompt_output["hookSpecificOutput"]["additionalContext"]
+    assert "delegate_to_cursor" in prompt_context
+    assert "UserPromptSubmit" in prompt_context
+    assert "Below is the full content of your 'codex-with-cursor' skill" not in prompt_context
 
     blocked = run_hook(
         plugin_root,

@@ -19,6 +19,11 @@ const FALLBACK_CONTRACT = {
   ],
   spawnToolNames: ["spawn_agent", "task", "subagent", "agent", "worker"],
   delegateEntrypointPattern: "delegate_to_cursor(?:\\.(?:ps1|sh|cmd|bat))?",
+  cursorAgent: {
+    executable: "agent",
+    defaultModel: "composer-2.5",
+    forbiddenArgs: ["--effort", "--name"],
+  },
 };
 
 const FALLBACK_CONTEXT = [
@@ -59,6 +64,7 @@ function mergeContract(contract) {
     ...contract,
     childThread: { ...FALLBACK_CONTRACT.childThread, ...(contract.childThread || {}) },
     spawn: { ...FALLBACK_CONTRACT.spawn, ...(contract.spawn || {}) },
+    cursorAgent: { ...FALLBACK_CONTRACT.cursorAgent, ...(contract.cursorAgent || {}) },
     workerRoles: Array.isArray(contract.workerRoles) ? contract.workerRoles : FALLBACK_CONTRACT.workerRoles,
     triggerPatterns: Array.isArray(contract.triggerPatterns) ? contract.triggerPatterns : FALLBACK_CONTRACT.triggerPatterns,
     spawnToolNames: Array.isArray(contract.spawnToolNames) ? contract.spawnToolNames : FALLBACK_CONTRACT.spawnToolNames,
@@ -88,6 +94,8 @@ const TRIGGER_PATTERNS = CONTRACT.triggerPatterns.map((pattern) => new RegExp(pa
 const SPAWN_TOOL_NAMES = new Set(CONTRACT.spawnToolNames.map((name) => String(name).toLowerCase()));
 const DELEGATE_ENTRYPOINT_PATTERN = new RegExp(CONTRACT.delegateEntrypointPattern, "i");
 
+const CURSOR_AGENT = CONTRACT.cursorAgent || FALLBACK_CONTRACT.cursorAgent;
+
 function bootstrapContext() {
   const root = pluginRoot();
   const skillText = readOptionalText(path.join(root, "skills", "codex-with-cursor", "SKILL.md"));
@@ -111,6 +119,20 @@ function bootstrapContext() {
     "",
     contractText.trim(),
     "",
+    "</EXTREMELY_IMPORTANT>",
+  ].join("\n");
+}
+
+function promptSubmitContext() {
+  const defaultModel = CURSOR_AGENT.defaultModel || "composer-2.5";
+  return [
+    "<EXTREMELY_IMPORTANT>",
+    "codex-with-cursor routing reminder (UserPromptSubmit):",
+    FALLBACK_CONTEXT,
+    "",
+    `- Cursor Agent CLI: use \`${CURSOR_AGENT.executable || "agent"}\` via delegate_to_cursor.* only inside a Codex spawn_agent child thread with CODEX_CURSOR_CHILD_THREAD=1.`,
+    `- Default delegate -Model: ${defaultModel} (override with agent --list-models IDs).`,
+    "- Read skills/codex-with-cursor/SKILL.md and CODEX_WITH_CURSOR.md in the installed plugin when dispatching; do not run agent or delegate_to_cursor from the main thread.",
     "</EXTREMELY_IMPORTANT>",
   ].join("\n");
 }
@@ -452,11 +474,20 @@ function handlePreToolUse(input) {
 const input = parseInput(await readStdin());
 const eventName = getEventName(input);
 
+function writeContext(eventName, contextText) {
+  writeJson({
+    hookSpecificOutput: {
+      hookEventName: eventName,
+      additionalContext: contextText,
+    },
+  });
+}
+
 if (eventName === "SessionStart") {
-  writeJson(additionalContext("SessionStart"));
+  writeContext("SessionStart", bootstrapContext());
 } else if (eventName === "UserPromptSubmit") {
   if (containsSubagentTrigger(getPrompt(input))) {
-    writeJson(additionalContext("UserPromptSubmit"));
+    writeContext("UserPromptSubmit", promptSubmitContext());
   }
 } else if (eventName === "PreToolUse") {
   handlePreToolUse(input);
