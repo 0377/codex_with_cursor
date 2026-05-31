@@ -48,6 +48,15 @@ def run_delegate_subprocess(args: list[str], env: dict[str, str] | None = None) 
 
 
 
+_FAKE_AGENT_LIST_MODELS_CMD = (
+    '@echo off\n'
+    'if "%1"=="--list-models" (\n'
+    '  echo composer-2.5\n'
+    '  exit /b 0\n'
+    ')\n'
+)
+
+
 def make_fake_agent_bin(temp_root: Path, body: str) -> Path:
     bin_dir = temp_root / "fake-agent-bin"
     bin_dir.mkdir(parents=True, exist_ok=True)
@@ -249,7 +258,13 @@ def run_test_runtime(_: argparse.Namespace) -> int:
         assert_equal(int(status["maxRetryCount"]), 7, "dry-run-status-records-max-retry")
 
         if os.name == "nt":
-            fake_body = '@echo off\nmore > nul\necho {"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"I inspected the tests."}]}}\necho {"type":"result","subtype":"success"}\nexit /b 0\n'
+            fake_body = (
+                _FAKE_AGENT_LIST_MODELS_CMD
+                + 'more > nul\n'
+                + 'echo {"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"I inspected the tests."}]}}\n'
+                + 'echo {"type":"result","subtype":"success"}\n'
+                + "exit /b 0\n"
+            )
         else:
             fake_body = (
                 "#!/bin/sh\n"
@@ -324,8 +339,8 @@ def run_test_runtime(_: argparse.Namespace) -> int:
         retry_state = temp_root / "unstructured_retry_seen.txt"
         if os.name == "nt":
             retry_fake_body = (
-                "@echo off\n"
-                "more > nul\n"
+                _FAKE_AGENT_LIST_MODELS_CMD
+                + "more > nul\n"
                 f'if exist "{retry_state}" goto structured\n'
                 f'echo seen>"{retry_state}"\n'
                 f"echo {unstructured_record}\n"
@@ -336,6 +351,9 @@ def run_test_runtime(_: argparse.Namespace) -> int:
                 f"echo {result_record}\n"
                 "exit /b 0\n"
             )
+            retry_fake_bin = temp_root / "fake-retry-agent-bin"
+            retry_fake_bin.mkdir(parents=True, exist_ok=True)
+            write_text(retry_fake_bin / "agent.cmd", retry_fake_body)
         else:
             helper = temp_root / "unstructured_retry_agent.py"
             helper.write_text(

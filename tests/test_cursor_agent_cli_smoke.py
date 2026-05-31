@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.task_helpers import compliant_task
+from tests.task_helpers import compliant_task, write_fake_agent_python_shim
 
 repo = Path(__file__).resolve().parents[1]
 delegate = repo / "skills" / "codex-with-cursor" / "scripts" / "delegate_to_cursor.py"
@@ -106,14 +106,20 @@ def test_new_cursor_cli_args_match_headless_contract() -> None:
 
 
 def test_resolve_agent_executable_prefers_agent_only(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    agent_bin = tmp_path / "agent"
-    cursor_bin = tmp_path / "cursor"
-    agent_bin.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
-    cursor_bin.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
-    agent_bin.chmod(0o755)
-    cursor_bin.chmod(0o755)
+    if os.name == "nt":
+        (tmp_path / "agent.cmd").write_text("@echo off\nexit /b 0\n", encoding="utf-8")
+        (tmp_path / "cursor.cmd").write_text("@echo off\nexit /b 0\n", encoding="utf-8")
+    else:
+        agent_bin = tmp_path / "agent"
+        cursor_bin = tmp_path / "cursor"
+        agent_bin.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        cursor_bin.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        agent_bin.chmod(0o755)
+        cursor_bin.chmod(0o755)
     monkeypatch.setenv("PATH", str(tmp_path))
-    assert resolve_agent_executable() == str(agent_bin)
+    resolved = resolve_agent_executable()
+    assert resolved is not None
+    assert Path(resolved).stem.lower() == "agent"
 
 
 def test_delegate_records_cursor_cli_argv_with_fake_agent() -> None:
@@ -170,9 +176,7 @@ def test_delegate_records_cursor_cli_argv_with_fake_agent() -> None:
             ),
             encoding="utf-8",
         )
-        shim = fake_bin / "agent"
-        shim.write_text(f"#!/bin/sh\nexec '{sys.executable}' '{script}' \"$@\"\n", encoding="utf-8")
-        shim.chmod(0o755)
+        shim = write_fake_agent_python_shim(fake_bin, script)
 
         task_file = Path(tmp) / "argv-task.md"
         task_file.write_text(compliant_task("record cursor argv"), encoding="utf-8")
