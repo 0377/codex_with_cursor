@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.task_helpers import FAKE_AGENT_LIST_MODELS_SH, compliant_task
+from tests.task_helpers import FAKE_AGENT_LIST_MODELS_CMD, FAKE_AGENT_LIST_MODELS_SH, compliant_task
 
 pytestmark = [
     pytest.mark.requires_pwsh,
@@ -102,15 +102,11 @@ def make_fake_agent_bin(root: Path) -> Path:
     result_record = json.dumps({"type": "result", "subtype": "success"}, separators=(",", ":"))
     if os.name == "nt":
         (fake_bin / "agent.cmd").write_text(
-            "@echo off\n"
-            "if \"%1\"==\"--list-models\" (\n"
-            "  echo composer-2.5\n"
-            "  exit /b 0\n"
-            ")\n"
-            "more > nul\n"
-            f"echo {assistant_record}\n"
-            f"echo {result_record}\n"
-            "exit /b 0\n",
+            FAKE_AGENT_LIST_MODELS_CMD
+            + "more > nul\n"
+            + f"echo {assistant_record}\n"
+            + f"echo {result_record}\n"
+            + "exit /b 0\n",
             encoding="utf-8",
         )
     else:

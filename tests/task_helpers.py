@@ -15,6 +15,14 @@ for arg in "$@"; do
 done
 """
 
+FAKE_AGENT_LIST_MODELS_CMD = (
+    '@echo off\n'
+    'if "%1"=="--list-models" (\n'
+    '  echo composer-2.5\n'
+    '  exit /b 0\n'
+    ')\n'
+)
+
 
 def compliant_task(text: str, verification: str = "dry-run artifact generation completed") -> str:
     return f"""# Delegated Task

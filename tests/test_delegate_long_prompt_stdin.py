@@ -6,7 +6,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from tests.task_helpers import FAKE_AGENT_LIST_MODELS_SH, compliant_task
+from tests.task_helpers import FAKE_AGENT_LIST_MODELS_CMD, FAKE_AGENT_LIST_MODELS_SH, compliant_task
 
 
 repo = Path(__file__).resolve().parents[1]
@@ -34,11 +34,11 @@ def make_fake_agent_bin(root: Path, stdin_capture: Path) -> Path:
     result = json.dumps({"type": "result", "subtype": "success"}, separators=(",", ":"))
     if os.name == "nt":
         (fake_bin / "agent.cmd").write_text(
-            "@echo off\n"
-            f"more > \"{stdin_capture}\"\n"
-            f"echo {assistant}\n"
-            f"echo {result}\n"
-            "exit /b 0\n",
+            FAKE_AGENT_LIST_MODELS_CMD
+            + f"more > \"{stdin_capture}\"\n"
+            + f"echo {assistant}\n"
+            + f"echo {result}\n"
+            + "exit /b 0\n",
             encoding="utf-8",
         )
     else:
