@@ -582,7 +582,8 @@ def run_test_session_pool(_: argparse.Namespace) -> int:
         assert_equal(first.returncode, 0, "first-primary-dryrun-succeeds")
         state = load_json(temp_root / "session-pools" / f"{session_key}.json")
         primary_id = str(state["primary"]["sessionId"])
-        assert_true("--session-id " + primary_id in first.stdout, "first-primary-uses-session-id")
+        assert_true(f"Cursor Session Id: {primary_id}" in first.stdout, "first-primary-uses-session-id")
+        assert_true(f"<new session> {primary_id}" in first.stdout, "first-primary-starts-new-session")
         assert_equal(state["primary"]["status"], "available", "primary-released-after-dry-run")
         anchor = run_delegate_subprocess(
             [
@@ -619,7 +620,8 @@ def run_test_session_pool(_: argparse.Namespace) -> int:
         assert_equal(parallel_a.returncode, 0, "parallel-a-dryrun-succeeds")
         state = load_json(temp_root / "session-pools" / f"{session_key}.json")
         pool_id = str(state["parallelPool"][0]["sessionId"])
-        assert_true("--session-id " + pool_id in parallel_a.stdout, "first-parallel-uses-session-id")
+        assert_true(f"Cursor Session Id: {pool_id}" in parallel_a.stdout, "first-parallel-uses-session-id")
+        assert_true(f"<new session> {pool_id}" in parallel_a.stdout, "first-parallel-starts-new-session")
         parallel_b = run_delegate_subprocess(
             [
                 *delegate_task_args(temp_root, "parallel-sidecar-a-repeat", "parallel sidecar A"),

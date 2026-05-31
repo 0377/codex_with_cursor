@@ -232,3 +232,5 @@ WORKFLOW_ROOT="<installed-workflow-root>"
 ```
 
 Verify a run and workflow with `verify_delegate_run.*` and `verify_delegate_workflow.*`.
+
+Dry-run stdout includes `Cursor Session Id: <uuid>` and `Cursor Session Argument: <new session>|<--resume> <uuid>` (human-readable summary, not raw CLI argv). New pool leases use `<new session>`; resumed leases use `--resume`.
