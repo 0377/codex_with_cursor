@@ -1,16 +1,16 @@
 # Codex Plugin Layout
 
-This repository ships as a Codex plugin, with marketplace-first distribution through `aiskyhub/aiskyhub`.
+This repository ships as a Codex plugin with repository-direct installation (`codex plugin install`).
 
 ## Structure
 
 - `.codex-plugin/plugin.json`: Codex plugin manifest and UI metadata.
 - `skills/`: Shared plugin content root for the Codex plugin.
-- `skills/codex-with-cc/`: The real workflow implementation, runtime scripts, `contract.json`, and contract docs.
+- `skills/codex-with-cursor/`: The real workflow implementation, runtime scripts, `contract.json`, and contract docs.
 
-## Why the runtime stays under `skills/codex-with-cc/`
+## Why the runtime stays under `skills/codex-with-cursor/`
 
-The delegated runtime, hook gate, and contract tests assume that `skills/codex-with-cc/` is the canonical workflow root. Keeping that directory stable avoids breaking:
+The delegated runtime, hook gate, and contract tests assume that `skills/codex-with-cursor/` is the canonical workflow root. Keeping that directory stable avoids breaking:
 
 - platform-specific packaging of `windows_scripts/` and `macos_scripts/`
 - verification scripts and path-sensitive tests
@@ -19,5 +19,5 @@ The delegated runtime, hook gate, and contract tests assume that `skills/codex-w
 ## Installation paths
 
 - Source layout: this repository exposes `.codex-plugin/plugin.json` so it can be recognized as a Codex plugin source.
-- Distribution path: install `codex-with-cc` from the `aiskyhub/aiskyhub` marketplace for Codex.
+- Distribution path: `codex plugin install https://github.com/0377/codex_with_cursor --scope user`, or `codex plugin install <path-to-this-repo> --scope user` when working from a local clone.
 - No script-based cross-project installer is provided by this repository anymore.

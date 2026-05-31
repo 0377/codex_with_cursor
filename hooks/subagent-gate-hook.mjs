@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const FALLBACK_CONTRACT = {
-  childThread: { markerName: "CODEX_CLAUDE_CHILD_THREAD", markerValue: "1" },
+  childThread: { markerName: "CODEX_CURSOR_CHILD_THREAD", markerValue: "1" },
   spawn: { model: "gpt-5.3-codex", reasoningEffort: "medium", forkContext: false },
   workerRoles: ["planner", "implementer", "researcher", "reviewer", "final-verifier"],
   triggerPatterns: [
@@ -18,18 +18,18 @@ const FALLBACK_CONTRACT = {
     "子代理|子线程|多代理|委派|派工|执行层",
   ],
   spawnToolNames: ["spawn_agent", "task", "subagent", "agent", "worker"],
-  delegateEntrypointPattern: "delegate_to_claude(?:\\.(?:ps1|sh|cmd|bat))?",
+  delegateEntrypointPattern: "delegate_to_cursor(?:\\.(?:ps1|sh|cmd|bat))?",
 };
 
 const FALLBACK_CONTEXT = [
-  "codex-with-cc platform subagent gate:",
-  "- Any child-agent, subagent, child-thread, delegation, worker-execution, 子代理, 子线程, 多代理, 委派, 派工, or 执行层 request must use the codex-with-cc workflow.",
-  "- Required chain: Codex main thread -> Codex spawn_agent child thread -> delegate_to_claude.* -> Claude Code CLI.",
-  "- Do not use the default Codex subagent flow, a host-provided worker shortcut, direct claude execution, or direct main-thread delegate_to_claude.* execution.",
+  "codex-with-cursor platform subagent gate:",
+  "- Any child-agent, subagent, child-thread, delegation, worker-execution, 子代理, 子线程, 多代理, 委派, 派工, or 执行层 request must use the codex-with-cursor workflow.",
+  "- Required chain: Codex main thread -> Codex spawn_agent child thread -> delegate_to_cursor.* -> Cursor Agent CLI.",
+  "- Do not use the default Codex subagent flow, a host-provided worker shortcut, direct agent/cursor CLI execution, or direct main-thread delegate_to_cursor.* execution.",
   "- Use the staged flow: plan task graph, dispatch bounded tasks, execute with scoped worker context, review spec compliance, review quality, then verify the workflow.",
   "- Implementer workflows require spec review, quality review, and final-verifier acceptance.",
   "- Child spawn metadata must be model: gpt-5.3-codex, reasoning_effort: medium, fork_context: false.",
-  "- The child must set CODEX_CLAUDE_CHILD_THREAD=1 and call delegate_to_claude.* with -TaskFile, -WorkflowId, -TaskId, -Role, and -SessionKey.",
+  "- The child must set CODEX_CURSOR_CHILD_THREAD=1 and call delegate_to_cursor.* with -TaskFile, -WorkflowId, -TaskId, -Role, and -SessionKey.",
   "- Use validate_delegate_task.* to preflight generated TaskFiles when review metadata or -Tests are involved.",
   "- Legacy inline -Task and -Mode delegate arguments are forbidden.",
 ].join("\n");
@@ -66,7 +66,7 @@ function mergeContract(contract) {
 }
 
 function readContract() {
-  const raw = readOptionalText(path.join(pluginRoot(), "skills", "codex-with-cc", "contract.json"));
+  const raw = readOptionalText(path.join(pluginRoot(), "skills", "codex-with-cursor", "contract.json"));
   if (!raw.trim()) {
     return FALLBACK_CONTRACT;
   }
@@ -90,8 +90,8 @@ const DELEGATE_ENTRYPOINT_PATTERN = new RegExp(CONTRACT.delegateEntrypointPatter
 
 function bootstrapContext() {
   const root = pluginRoot();
-  const skillText = readOptionalText(path.join(root, "skills", "codex-with-cc", "SKILL.md"));
-  const contractText = readOptionalText(path.join(root, "skills", "codex-with-cc", "CODEX_WITH_CC.md"));
+  const skillText = readOptionalText(path.join(root, "skills", "codex-with-cursor", "SKILL.md"));
+  const contractText = readOptionalText(path.join(root, "skills", "codex-with-cursor", "CODEX_WITH_CURSOR.md"));
 
   if (!skillText.trim() || !contractText.trim()) {
     return FALLBACK_CONTEXT;
@@ -99,15 +99,15 @@ function bootstrapContext() {
 
   return [
     "<EXTREMELY_IMPORTANT>",
-    "You have codex-with-cc routing.",
+    "You have codex-with-cursor routing.",
     "",
-    "**Below is the full content of your 'codex-with-cc' skill and workflow contract. Follow this routing contract whenever child-agent, subagent, child-thread, delegation, worker-execution, 子代理, 子线程, 多代理, 委派, 派工, or 执行层 appears.**",
+    "**Below is the full content of your 'codex-with-cursor' skill and workflow contract. Follow this routing contract whenever child-agent, subagent, child-thread, delegation, worker-execution, 子代理, 子线程, 多代理, 委派, 派工, or 执行层 appears.**",
     "",
-    "## codex-with-cc SKILL.md",
+    "## codex-with-cursor SKILL.md",
     "",
     skillText.trim(),
     "",
-    "## codex-with-cc CODEX_WITH_CC.md",
+    "## codex-with-cursor CODEX_WITH_CURSOR.md",
     "",
     contractText.trim(),
     "",
@@ -303,8 +303,8 @@ function hasForbiddenEffort(serialized) {
   return /(?:^|[\s"'])--effort\b/i.test(serialized);
 }
 
-function hasDirectClaudeCommand(serialized) {
-  return /(?:^|[\s;&|"'`])(?:\.\/|\.\\|[\w:/\\.-]*[/\\])?claude(?:\.cmd|\.exe)?(?=$|[\s;&|"'`])/i.test(serialized);
+function hasDirectCursorCommand(serialized) {
+  return /(?:^|[\s;&|"'`])(?:\.\/|\.\\|[\w:/\\.-]*[/\\])?(?:agent|cursor)(?:\.cmd|\.exe)?(?=$|[\s;&|"'`])/i.test(serialized);
 }
 
 function validateWorkflowPayload(payload) {
@@ -320,14 +320,14 @@ function validateWorkflowPayload(payload) {
   if (prop(payload, "fork_context", "forkContext") !== REQUIRED_FORK_CONTEXT) {
     problems.push("fork_context: false is required");
   }
-  if (hasDirectClaudeCommand(serialized)) {
-    problems.push("direct Claude CLI execution is forbidden");
+  if (hasDirectCursorCommand(serialized)) {
+    problems.push("direct Cursor Agent CLI execution is forbidden");
   }
   if (!hasChildMarker(serialized)) {
-    problems.push("CODEX_CLAUDE_CHILD_THREAD=1 is required");
+    problems.push("CODEX_CURSOR_CHILD_THREAD=1 is required");
   }
   if (!hasDelegateEntrypoint(serialized)) {
-    problems.push("delegate_to_claude.* is required");
+    problems.push("delegate_to_cursor.* is required");
   }
   if (!hasTaskFile(serialized)) {
     problems.push("-TaskFile is required");
@@ -360,7 +360,7 @@ function validateWorkflowPayload(payload) {
     problems.push("-Scope is required when -AllowParallel is used");
   }
   if (hasForbiddenEffort(serialized)) {
-    problems.push("delegate_to_claude.* must not pass --effort");
+    problems.push("delegate_to_cursor.* must not pass --effort");
   }
 
   return problems;
@@ -384,20 +384,20 @@ function handlePreToolUse(input) {
     }
   }
   if (nestedProblems.length > 0) {
-    writeJson(deny(`codex-with-cc platform gate blocked ${nestedProblems.join("; ")}.`));
+    writeJson(deny(`codex-with-cursor platform gate blocked ${nestedProblems.join("; ")}.`));
     return;
   }
 
   if (isShellToolName(normalizedToolName)) {
     const problems = [];
 
-    if (hasDirectClaudeCommand(serialized)) {
-      problems.push("direct Claude CLI execution is forbidden");
+    if (hasDirectCursorCommand(serialized)) {
+      problems.push("direct Cursor Agent CLI execution is forbidden");
     }
 
     if (hasDelegateEntrypoint(serialized)) {
       if (!hasChildMarker(serialized)) {
-        problems.push("CODEX_CLAUDE_CHILD_THREAD=1 is required");
+        problems.push("CODEX_CURSOR_CHILD_THREAD=1 is required");
       }
       if (!hasTaskFile(serialized)) {
         problems.push("-TaskFile is required");
@@ -429,12 +429,12 @@ function handlePreToolUse(input) {
         problems.push("-Scope is required when -AllowParallel is used");
       }
       if (hasForbiddenEffort(serialized)) {
-        problems.push("delegate_to_claude.* must not pass --effort");
+        problems.push("delegate_to_cursor.* must not pass --effort");
       }
     }
 
     if (problems.length > 0) {
-      writeJson(deny(`codex-with-cc platform gate blocked Bash: ${problems.join("; ")}.`));
+      writeJson(deny(`codex-with-cursor platform gate blocked Bash: ${problems.join("; ")}.`));
     }
     return;
   }
@@ -445,7 +445,7 @@ function handlePreToolUse(input) {
 
   const problems = validateWorkflowPayload(toolInput);
   if (problems.length > 0) {
-    writeJson(deny(`codex-with-cc platform gate blocked ${toolName}: ${problems.join("; ")}.`));
+    writeJson(deny(`codex-with-cursor platform gate blocked ${toolName}: ${problems.join("; ")}.`));
   }
 }
 

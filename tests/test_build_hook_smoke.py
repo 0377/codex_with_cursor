@@ -11,7 +11,7 @@ from tests.task_helpers import compliant_task
 
 REPO = Path(__file__).resolve().parents[1]
 BUILD_ROOT = REPO / "build"
-SMOKE_ROOT = BUILD_ROOT / "codex-with-cc-hook-smoke"
+SMOKE_ROOT = BUILD_ROOT / "codex-with-cursor-hook-smoke"
 
 
 def reset_smoke_project() -> tuple[Path, Path, Path]:
@@ -25,7 +25,7 @@ def reset_smoke_project() -> tuple[Path, Path, Path]:
 
     plugin_root = smoke_root / "installed-plugin"
     project_root = smoke_root / "project"
-    workflow_root = plugin_root / "skills" / "codex-with-cc"
+    workflow_root = plugin_root / "skills" / "codex-with-cursor"
     plugin_root.mkdir(parents=True)
     project_root.mkdir(parents=True)
 
@@ -37,7 +37,7 @@ def reset_smoke_project() -> tuple[Path, Path, Path]:
         ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
     )
     (project_root / "AGENTS.md").write_text(
-        "# Smoke Project\n\nAny 子代理 task here must route through codex-with-cc.\n",
+        "# Smoke Project\n\nAny 子代理 task here must route through codex-with-cursor.\n",
         encoding="utf-8",
     )
     return plugin_root, workflow_root, project_root
@@ -71,7 +71,7 @@ def run_hook(plugin_root: Path, project_root: Path, config: dict, event_name: st
 
 def delegate_command(workflow_root: Path, task_file: Path, artifact_root: Path) -> tuple[list[str], str]:
     if os.name == "nt":
-        script = workflow_root / "windows_scripts" / "delegate_to_claude.ps1"
+        script = workflow_root / "windows_scripts" / "delegate_to_cursor.ps1"
         argv = [
             "pwsh",
             "-NoProfile",
@@ -96,7 +96,7 @@ def delegate_command(workflow_root: Path, task_file: Path, artifact_root: Path) 
             "-DryRun",
         ]
         hook_text = (
-            "$env:CODEX_CLAUDE_CHILD_THREAD = '1'; "
+            "$env:CODEX_CURSOR_CHILD_THREAD = '1'; "
             f'pwsh -NoProfile -File "{script.as_posix()}" '
             f'-TaskFile "{task_file.as_posix()}" '
             "-WorkflowId wf-smoke -TaskId task-smoke -Role researcher -Scope AGENTS.md "
@@ -105,8 +105,9 @@ def delegate_command(workflow_root: Path, task_file: Path, artifact_root: Path) 
         )
         return argv, hook_text
 
-    script = workflow_root / "macos_scripts" / "delegate_to_claude.sh"
+    script = workflow_root / "scripts" / "delegate_to_cursor.py"
     argv = [
+        sys.executable,
         str(script),
         "-TaskFile",
         str(task_file),
@@ -126,9 +127,10 @@ def delegate_command(workflow_root: Path, task_file: Path, artifact_root: Path) 
         "smoke",
         "-DryRun",
     ]
+    shell_entry = workflow_root / "macos_scripts" / "delegate_to_cursor.sh"
     hook_text = (
-        "export CODEX_CLAUDE_CHILD_THREAD=1; "
-        f'"{script.as_posix()}" '
+        "export CODEX_CURSOR_CHILD_THREAD=1; "
+        f'"{shell_entry.as_posix()}" '
         f'-TaskFile "{task_file.as_posix()}" '
         "-WorkflowId wf-smoke -TaskId task-smoke -Role researcher -Scope AGENTS.md "
         f'-ArtifactRoot "{artifact_root.as_posix()}" '
@@ -150,7 +152,7 @@ def test_build_project_smoke_runs_hook_gate_and_delegate_dry_run() -> None:
     )
     session_context = session_output["hookSpecificOutput"]["additionalContext"]
     assert "<EXTREMELY_IMPORTANT>" in session_context
-    assert "Below is the full content of your 'codex-with-cc' skill" in session_context
+    assert "Below is the full content of your 'codex-with-cursor' skill" in session_context
     assert "## Core Contract" in session_context
 
     prompt_output = run_hook(
@@ -160,7 +162,7 @@ def test_build_project_smoke_runs_hook_gate_and_delegate_dry_run() -> None:
         "UserPromptSubmit",
         {"hook_event_name": "UserPromptSubmit", "prompt": "请开启子代理并行委派两个 worker 处理"},
     )
-    assert "delegate_to_claude" in prompt_output["hookSpecificOutput"]["additionalContext"]
+    assert "delegate_to_cursor" in prompt_output["hookSpecificOutput"]["additionalContext"]
 
     blocked = run_hook(
         plugin_root,
@@ -170,19 +172,19 @@ def test_build_project_smoke_runs_hook_gate_and_delegate_dry_run() -> None:
         {
             "hook_event_name": "PreToolUse",
             "tool_name": "Bash",
-            "tool_input": {"command": "claude -p \"do delegated work\""},
+            "tool_input": {"command": "agent -p \"do delegated work\""},
         },
     )
     assert blocked["hookSpecificOutput"]["permissionDecision"] == "deny"
 
-    task_dir = project_root / ".codex" / "codex_with_cc" / "tasks" / "20260514"
+    task_dir = project_root / ".codex" / "codex_with_cursor" / "tasks" / "20260514"
     task_dir.mkdir(parents=True)
     task_file = task_dir / "120000000-smoke-task.md"
     task_file.write_text(
         compliant_task("Inspect this fake project and report the routing contract. Do not modify files."),
         encoding="utf-8",
     )
-    artifact_root = project_root / ".codex" / "codex_with_cc" / "claude-delegate"
+    artifact_root = project_root / ".codex" / "codex_with_cursor" / "cursor-delegate"
     argv, hook_text = delegate_command(workflow_root, task_file, artifact_root)
 
     allowed = run_hook(
@@ -199,7 +201,7 @@ def test_build_project_smoke_runs_hook_gate_and_delegate_dry_run() -> None:
     assert allowed == {}
 
     env = os.environ.copy()
-    env["CODEX_CLAUDE_CHILD_THREAD"] = "1"
+    env["CODEX_CURSOR_CHILD_THREAD"] = "1"
     result = subprocess.run(
         argv,
         cwd=project_root,
@@ -211,8 +213,8 @@ def test_build_project_smoke_runs_hook_gate_and_delegate_dry_run() -> None:
         check=False,
     )
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "Dry run enabled; Claude Code was not invoked." in result.stdout
-    assert list(artifact_root.glob("claude_*.md"))
+    assert "Dry run enabled; Cursor Agent was not invoked." in result.stdout
+    assert list(artifact_root.glob("cursor_*.md"))
     assert list(artifact_root.glob("status_*.json"))
 
 
@@ -229,4 +231,4 @@ def test_hook_command_runs_with_codex_plugin_root_only() -> None:
         root_env="CODEX_PLUGIN_ROOT",
     )
 
-    assert "codex-with-cc" in output["hookSpecificOutput"]["additionalContext"]
+    assert "codex-with-cursor" in output["hookSpecificOutput"]["additionalContext"]

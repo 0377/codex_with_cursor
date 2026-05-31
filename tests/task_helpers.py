@@ -8,7 +8,7 @@ Goal
 {text}
 
 Allowed Scope
-- skills/codex-with-cc
+- skills/codex-with-cursor
 
 Forbidden Actions
 - Do not edit README.md.

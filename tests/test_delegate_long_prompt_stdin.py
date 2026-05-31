@@ -10,11 +10,11 @@ from tests.task_helpers import compliant_task
 
 
 repo = Path(__file__).resolve().parents[1]
-delegate = repo / "skills" / "codex-with-cc" / "scripts" / "delegate_to_claude.py"
+delegate = repo / "skills" / "codex-with-cursor" / "scripts" / "delegate_to_cursor.py"
 
 
-def make_fake_claude_bin(root: Path, stdin_capture: Path) -> Path:
-    fake_bin = root / "fake-claude-bin"
+def make_fake_agent_bin(root: Path, stdin_capture: Path) -> Path:
+    fake_bin = root / "fake-agent-bin"
     fake_bin.mkdir(parents=True, exist_ok=True)
     assistant = json.dumps(
         {
@@ -32,14 +32,25 @@ def make_fake_claude_bin(root: Path, stdin_capture: Path) -> Path:
         separators=(",", ":"),
     )
     result = json.dumps({"type": "result", "subtype": "success"}, separators=(",", ":"))
-    (fake_bin / "claude.cmd").write_text(
-        "@echo off\n"
-        f"more > \"{stdin_capture}\"\n"
-        f"echo {assistant}\n"
-        f"echo {result}\n"
-        "exit /b 0\n",
-        encoding="utf-8",
-    )
+    if os.name == "nt":
+        (fake_bin / "agent.cmd").write_text(
+            "@echo off\n"
+            f"more > \"{stdin_capture}\"\n"
+            f"echo {assistant}\n"
+            f"echo {result}\n"
+            "exit /b 0\n",
+            encoding="utf-8",
+        )
+    else:
+        script = fake_bin / "agent"
+        script.write_text(
+            "#!/bin/sh\n"
+            f"cat > \"{stdin_capture}\"\n"
+            f"printf '%s\\n' '{assistant}'\n"
+            f"printf '%s\\n' '{result}'\n",
+            encoding="utf-8",
+        )
+        script.chmod(0o755)
     return fake_bin
 
 
@@ -48,7 +59,7 @@ def test_delegate_sends_long_prompt_via_stdin() -> None:
         root = Path(tmp)
         artifact_root = root / "artifacts"
         stdin_capture = root / "stdin.txt"
-        fake_bin = make_fake_claude_bin(root, stdin_capture)
+        fake_bin = make_fake_agent_bin(root, stdin_capture)
         long_task = "audit long prompt\n" + ("0123456789abcdef" * 2000)
         task_file = root / "long-task.md"
         task_file.write_text(compliant_task(long_task), encoding="utf-8")
@@ -75,7 +86,7 @@ def test_delegate_sends_long_prompt_via_stdin() -> None:
             capture_output=True,
             env={
                 **os.environ,
-                "CODEX_CLAUDE_CHILD_THREAD": "1",
+                "CODEX_CURSOR_CHILD_THREAD": "1",
                 "PYTHONDONTWRITEBYTECODE": "1",
                 "PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}",
             },

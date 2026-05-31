@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -13,10 +14,13 @@ def test_delegate_runtime_selftest_script_passes() -> None:
             "pwsh",
             "-NoProfile",
             "-File",
-            str(REPO / "skills" / "codex-with-cc" / "windows_scripts" / "test_delegate_runtime.ps1"),
+            str(REPO / "skills" / "codex-with-cursor" / "windows_scripts" / "test_delegate_runtime.ps1"),
         ]
     else:
-        command = [str(REPO / "skills" / "codex-with-cc" / "macos_scripts" / "test_delegate_runtime.sh")]
+        command = [
+            sys.executable,
+            str(REPO / "skills" / "codex-with-cursor" / "scripts" / "test_delegate_runtime.py"),
+        ]
 
     result = subprocess.run(command, cwd=REPO, text=True, capture_output=True)
 

@@ -1,0 +1,3 @@
+interface:
+  display_name: "Task Dispatching"
+  short_description: "Dispatch planned tasks into Cursor Agent execution runs"
