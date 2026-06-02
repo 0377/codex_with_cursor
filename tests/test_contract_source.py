@@ -100,7 +100,7 @@ def test_contract_json_is_single_source_for_runtime_constants() -> None:
     assert contract["reportHeadings"] == list(REPORT_HEADINGS)
     assert contract["childThread"]["markerName"] == "CODEX_CURSOR_CHILD_THREAD"
     assert contract["childThread"]["markerValue"] == "1"
-    assert contract["spawn"]["model"] == "gpt-5.3-codex"
+    assert contract["spawn"]["model"] == "gpt-5.4"
     assert contract["spawn"]["reasoningEffort"] == "medium"
     assert contract["spawn"]["forkContext"] is False
     assert "-Task" in contract["legacy"]["forbiddenArgs"]

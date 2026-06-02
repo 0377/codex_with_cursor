@@ -24,7 +24,7 @@
 
 没有 `codex` CLI 也不用慌，把下面「一句话安装」交给 Codex，它会按 [AI_INSTALL.md](AI_INSTALL.md) 装好插件并自检。
 
-**说明**：Codex 子线程的 `spawn_agent` 模型（如 `gpt-5.3-codex`）与 Cursor 执行层 `-Model` 是两套参数，不要混用。详见 [AI_INSTALL.md](AI_INSTALL.md) 的「三层命令参数」，以及 `skills/codex-with-cursor/CODEX_WITH_CURSOR.md` 的 *Command-Line Parameter Layers*。
+**说明**：Codex 子线程的 `spawn_agent` 模型（如 `gpt-5.4`）与 Cursor 执行层 `-Model` 是两套参数，不要混用。详见 [AI_INSTALL.md](AI_INSTALL.md) 的「三层命令参数」，以及 `skills/codex-with-cursor/CODEX_WITH_CURSOR.md` 的 *Command-Line Parameter Layers*。
 
 # 一句话安装
 

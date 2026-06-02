@@ -89,7 +89,7 @@ def test_codex_with_cursor_skill_contract() -> None:
         "TaskId",
         "Role",
         "current working directory",
-        "gpt-5.3-codex",
+        "gpt-5.4",
         "fork_context: false",
         "Status",
         "Role",

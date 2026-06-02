@@ -9,7 +9,7 @@ Read `../codex-with-cursor/CODEX_WITH_CURSOR.md` before dispatching. Use this sk
 
 Dispatch rules:
 
-- Every child thread uses `model: gpt-5.3-codex`, `reasoning_effort: medium`, and `fork_context: false`.
+- Every child thread uses `model: gpt-5.4`, `reasoning_effort: medium`, and `fork_context: false`.
 - Every worker command sets `CODEX_CURSOR_CHILD_THREAD=1`.
 - Every worker command passes `-TaskFile`, `-WorkflowId`, `-TaskId`, `-Role`, and `-SessionKey`.
 - Run `validate_delegate_task.*` before dispatch when the task file was generated, contains reviewer metadata, or carries explicit `-Tests` commands.

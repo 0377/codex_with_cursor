@@ -9,7 +9,7 @@ Read this file before using the workflow in this repository. Treat `contract.jso
 1. Any child-agent, subagent, sub-agent, child-thread, subthread, delegation, worker-execution, 子代理, 子线程, 多代理, 委派, 派工, or 执行层 request must use this workflow.
 2. Do not replace it with the default Codex subagent flow, host worker shortcuts, direct `agent`, or direct main-thread `delegate_to_cursor.*`.
 3. The Codex main thread owns design, task boundaries, acceptance criteria, review decisions, rework decisions, and final delivery.
-4. Every Cursor Agent worker run must be carried by a fresh Codex `spawn_agent` child thread using `model: gpt-5.3-codex`, `reasoning_effort: medium`, and `fork_context: false`.
+4. Every Cursor Agent worker run must be carried by a fresh Codex `spawn_agent` child thread using `model: gpt-5.4`, `reasoning_effort: medium`, and `fork_context: false`.
 5. The child thread must set `CODEX_CURSOR_CHILD_THREAD=1` before invoking `delegate_to_cursor.*`.
 6. Delegate commands must use task-file-only invocation. `-TaskFile`, `-WorkflowId`, `-TaskId`, `-Role`, and `-SessionKey` are required.
 7. Legacy inline `-Task`, legacy `-Mode`, missing workflow metadata, and implicit session-key fallback are not supported.
@@ -162,7 +162,7 @@ Do not mix the three parameter systems below. Only the bottom layer is the Curso
 
 | Layer | Who invokes it | Example parameters | Maps to Cursor CLI? |
 |-------|----------------|--------------------|---------------------|
-| Codex child thread | Main thread `spawn_agent` | `model: gpt-5.3-codex`, `reasoning_effort: medium`, `fork_context: false` | No |
+| Codex child thread | Main thread `spawn_agent` | `model: gpt-5.4`, `reasoning_effort: medium`, `fork_context: false` | No |
 | Delegate wrapper | Child thread `delegate_to_cursor.*` | `-TaskFile`, `-WorkflowId`, `-TaskId`, `-Role`, `-SessionKey`, optional `-Model`, `-Scope`, `-BypassPermissions` | No (orchestration only) |
 | Cursor Agent CLI | `delegate_to_cursor` runtime | `--print`, `--output-format stream-json`, `--model`, `--resume`, `--yolo`, `--trust` | Yes |
 

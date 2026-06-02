@@ -89,7 +89,7 @@ def test_pre_tool_use_denies_non_compliant_spawn_agent_payload() -> None:
             "tool_name": "spawn_agent",
             "tool_input": {
                 "message": "Use a normal worker to implement this.",
-                "model": "gpt-5.4",
+                "model": "gpt-5.3-codex",
                 "reasoning_effort": "high",
                 "fork_context": True,
             },
@@ -100,7 +100,7 @@ def test_pre_tool_use_denies_non_compliant_spawn_agent_payload() -> None:
 
     assert specific["hookEventName"] == "PreToolUse"
     assert specific["permissionDecision"] == "deny"
-    assert "gpt-5.3-codex" in reason
+    assert "gpt-5.4" in reason
     assert "delegate_to_cursor" in reason
     assert "fork_context: false" in reason
 
@@ -112,7 +112,7 @@ def test_pre_tool_use_denies_namespaced_spawn_agent_payload() -> None:
             "tool_name": "functions.spawn_agent",
             "tool_input": {
                 "message": "Use a normal worker to implement this.",
-                "model": "gpt-5.4",
+                "model": "gpt-5.3-codex",
                 "reasoning_effort": "high",
                 "fork_context": True,
             },
@@ -121,7 +121,7 @@ def test_pre_tool_use_denies_namespaced_spawn_agent_payload() -> None:
     reason = hook_specific(output)["permissionDecisionReason"]
 
     assert "blocked functions.spawn_agent" in reason
-    assert "gpt-5.3-codex" in reason
+    assert "gpt-5.4" in reason
     assert "delegate_to_cursor" in reason
 
 
@@ -136,7 +136,7 @@ def test_pre_tool_use_denies_spawn_agent_inside_parallel_wrapper() -> None:
                         "recipient_name": "functions.spawn_agent",
                         "parameters": {
                             "message": "Use a normal worker to implement this.",
-                            "model": "gpt-5.4",
+                            "model": "gpt-5.3-codex",
                             "reasoning_effort": "high",
                             "fork_context": True,
                         },
@@ -148,7 +148,7 @@ def test_pre_tool_use_denies_spawn_agent_inside_parallel_wrapper() -> None:
     reason = hook_specific(output)["permissionDecisionReason"]
 
     assert "blocked nested functions.spawn_agent" in reason
-    assert "gpt-5.3-codex" in reason
+    assert "gpt-5.4" in reason
     assert "delegate_to_cursor" in reason
 
 
@@ -165,7 +165,7 @@ def test_pre_tool_use_allows_compliant_spawn_agent_payload() -> None:
                     "-WorkflowId wf-a -TaskId task-a -Role researcher -SessionKey wf-a "
                     "-Scope skills/codex-with-cursor"
                 ),
-                "model": "gpt-5.3-codex",
+                "model": "gpt-5.4",
                 "reasoning_effort": "medium",
                 "fork_context": False,
             },
@@ -189,7 +189,7 @@ def test_pre_tool_use_allows_spawn_agent_with_cursor_agent_cli_prose() -> None:
                     "-SessionKey wf-hook-fix -Scope hooks. "
                     "Do not call Cursor Agent CLI directly from the child thread."
                 ),
-                "model": "gpt-5.3-codex",
+                "model": "gpt-5.4",
                 "reasoning_effort": "medium",
                 "fork_context": False,
             },

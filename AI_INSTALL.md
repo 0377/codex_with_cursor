@@ -50,7 +50,7 @@ Codex 主线程 -> Codex spawn_agent 子线程 -> 已安装插件中的 delegate
 
 | 层级 | 入口 | 典型参数 | 是否 Cursor CLI |
 |------|------|----------|-----------------|
-| Codex 子线程 | `spawn_agent` | `model: gpt-5.3-codex`, `reasoning_effort: medium`, `fork_context: false` | 否 |
+| Codex 子线程 | `spawn_agent` | `model: gpt-5.4`, `reasoning_effort: medium`, `fork_context: false` | 否 |
 | 委派包装器 | `delegate_to_cursor.*` | `-TaskFile`, `-WorkflowId`, `-TaskId`, `-Role`, `-SessionKey` 等 | 否 |
 | Cursor 执行层 | `agent` | `--print`, `--output-format stream-json`, `--model`, `--resume`, `--yolo`, `--trust` | 是 |
 
