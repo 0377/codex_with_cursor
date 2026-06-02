@@ -1,10 +1,12 @@
 # Codex Plugin Layout
 
-This repository ships as a Codex plugin with repository-direct installation (`codex plugin install`).
+This repository ships as a Codex plugin with Git marketplace installation and upgrade (`codex plugin marketplace` + `codex plugin add`).
 
 ## Structure
 
 - `.codex-plugin/plugin.json`: Codex plugin manifest and UI metadata.
+- `.agents/plugins/marketplace.json`: Marketplace catalog so Codex can discover and install this plugin from the repository.
+- `plugins/codex-with-cursor`: Symlink to the repository root (`..`) so the marketplace entry can use the standard `./plugins/<name>` layout without duplicating the plugin tree.
 - `skills/`: Shared plugin content root for the Codex plugin.
 - `skills/codex-with-cursor/`: The real workflow implementation, runtime scripts, `contract.json`, and contract docs.
 
@@ -16,8 +18,32 @@ The delegated runtime, hook gate, and contract tests assume that `skills/codex-w
 - verification scripts and path-sensitive tests
 - the shared `contract.json` read by both Python runtime code and the platform hook
 
-## Installation paths
+## Installation and update
 
-- Source layout: this repository exposes `.codex-plugin/plugin.json` so it can be recognized as a Codex plugin source.
-- Distribution path: `codex plugin install https://github.com/0377/codex_with_cursor --scope user`, or `codex plugin install <path-to-this-repo> --scope user` when working from a local clone.
-- No script-based cross-project installer is provided by this repository anymore.
+1. Register the marketplace source:
+
+   ```bash
+   codex plugin marketplace add 0377/codex_with_cursor
+   # or from a local clone:
+   codex plugin marketplace add /path/to/codex_with_cursor
+   ```
+
+2. Install the plugin (confirm `<MARKETPLACE>` from `codex plugin marketplace list`):
+
+   ```bash
+   codex plugin add codex-with-cursor@<MARKETPLACE>
+   ```
+
+3. Update after pulling or publishing new commits:
+
+   ```bash
+   codex plugin marketplace upgrade <MARKETPLACE>
+   ```
+
+   Restart Codex or reload plugins if the new version does not appear. Re-run `codex plugin add` after `remove` if needed.
+
+Installed workflow root:
+
+`~/.codex/plugins/cache/<marketplace>/codex-with-cursor/<version>/skills/codex-with-cursor`
+
+No script-based cross-project installer is provided by this repository anymore.

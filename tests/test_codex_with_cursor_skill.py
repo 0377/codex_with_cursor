@@ -49,7 +49,7 @@ def test_codex_with_cursor_skill_contract() -> None:
 
     codex_manifest = json.loads(codex_plugin.read_text(encoding="utf-8"))
     assert codex_manifest["name"] == "codex-with-cursor"
-    assert codex_manifest["version"] == "1.1.0"
+    assert codex_manifest["version"] == "1.2.0"
     assert codex_manifest["skills"] == "./skills/"
     assert "aiskyhub" not in codex_manifest["interface"]["longDescription"].lower()
     assert "marketplace" not in codex_manifest["interface"]["longDescription"].lower()

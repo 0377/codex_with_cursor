@@ -1,9 +1,9 @@
 {
   "name": "codex-with-cursor",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A Codex plugin for delegating Codex child-agent work to Cursor Agent CLI with workflow artifacts.",
   "author": {
-    "name": "xdd666t"
+    "name": "ice"
   },
   "repository": "https://github.com/0377/codex_with_cursor",
   "keywords": [
@@ -19,8 +19,8 @@
   "interface": {
     "displayName": "Codex With Cursor",
     "shortDescription": "Codex plugin for the Cursor Agent delegation workflow.",
-    "longDescription": "Routes Codex main thread planning into staged Codex child-agent execution that is handed off to Cursor Agent CLI with workflow/task/run artifacts. Install from this repository via codex plugin install.",
-    "developerName": "xdd666t",
+    "longDescription": "Routes Codex main thread planning into staged Codex child-agent execution that is handed off to Cursor Agent CLI with workflow/task/run artifacts. Install from this Git repository with the Codex plugin CLI; see AI_INSTALL.md for register, add, and upgrade steps.",
+    "developerName": "ice",
     "category": "Development",
     "capabilities": [
       "Read",
@@ -29,7 +29,7 @@
     "defaultPrompt": [
       "Use the codex-with-cursor workflow to delegate child-agent implementation through Cursor Agent CLI.",
       "Review this repository and explain how Codex main thread planning flows into workflow/task/run Cursor Agent CLI execution.",
-      "Install codex-with-cursor from the repository with codex plugin install for user scope."
+      "Install codex-with-cursor from the repository with codex plugin marketplace add and codex plugin add."
     ]
   }
 }

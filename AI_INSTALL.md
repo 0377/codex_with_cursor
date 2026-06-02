@@ -1,13 +1,13 @@
 # AI 安装说明
 
-本文件是 `codex_with_cursor` 的仓库直装安装契约，给 AI 执行安装或更新时使用。安装源为本仓库 [https://github.com/0377/codex_with_cursor](https://github.com/0377/codex_with_cursor)，不经过插件市场。
+本文件是 `codex_with_cursor` 的安装与更新契约，给 AI 执行安装或更新时使用。安装源为本仓库 [https://github.com/0377/codex_with_cursor](https://github.com/0377/codex_with_cursor)，通过 Codex 官方 Git marketplace 安装与升级，不经过第三方插件目录或 aiskyhub。
 
 ## 默认交互策略
 
 用户要求安装、集成或更新这套工作流时，默认零打扰执行：
 
 1. 直接执行，不先把安装变成问答。
-2. 如果检测到旧版脚本安装残留或旧版 `codex-with-cc` 插件，先清理再继续直装。
+2. 如果检测到旧版脚本安装残留或旧版 `codex-with-cc` 插件，先清理再继续 marketplace 安装。
 3. 默认执行用户级安装，除非用户明确要求项目级。
 4. 如果宿主环境还没有安装 `codex` CLI，先自动安装官方 CLI，再继续后续步骤。
 5. 如果还没有 `agent`（Cursor Agent CLI），先安装 Cursor CLI，再继续后续步骤。
@@ -64,12 +64,16 @@ Codex 主线程 -> Codex spawn_agent 子线程 -> 已安装插件中的 delegate
 
 ## 分发源
 
-唯一分发入口为本仓库（直装，不经过插件市场）：
+唯一分发入口为本仓库（Codex Git marketplace，不经过第三方插件市场）：
 
 ```text
 Repository: https://github.com/0377/codex_with_cursor
+Marketplace manifest: .agents/plugins/marketplace.json
+Plugin catalog path: plugins/codex-with-cursor (symlink to repo root)
 Plugin name: codex-with-cursor
 ```
+
+不要使用已废弃的 `codex plugin install`；安装与更新一律走 `codex plugin marketplace` + `codex plugin add`。
 
 ## 旧版安装残留清理
 
@@ -133,38 +137,72 @@ command -v agent
 
 若不存在，按 Cursor 官方文档安装 CLI（例如 `curl https://cursor.com/install -fsS | bash`），并确认 `agent` 可用。无法安装则报告失败并停止。
 
-### 3. 安装插件（本仓库直装）
+### 3. 注册 marketplace 并安装插件
 
-按优先级选择一种方式（均安装插件 `codex-with-cursor`）：
+仓库根目录含 `.agents/plugins/marketplace.json` 与 `.codex-plugin/plugin.json`。按优先级选择 marketplace 源（均安装插件 `codex-with-cursor`）：
 
-**A. 已在当前仓库工作区**（目录内存在 `.codex-plugin/plugin.json`）：
-
-```bash
-codex plugin install "$(git -C /path/to/codex_with_cursor rev-parse --show-toplevel)" --scope user
-```
-
-将 `/path/to/codex_with_cursor` 换成实际 clone 路径；若命令就在仓库根目录执行，可用 `$(git rev-parse --show-toplevel)`。
-
-**B. 从本仓库 GitHub 源安装：**
+**A. 从 GitHub 注册（推荐，便于后续 `marketplace upgrade` 更新）：**
 
 ```bash
-codex plugin install https://github.com/0377/codex_with_cursor --scope user
+codex plugin marketplace add 0377/codex_with_cursor
+# 可选固定分支：codex plugin marketplace add 0377/codex_with_cursor --ref main
 ```
 
-**C. 回退：clone 本仓库后本地路径安装：**
+**B. 已在本地 clone（目录内存在 `.codex-plugin/plugin.json`）：**
+
+```bash
+codex plugin marketplace add "$(git -C /path/to/codex_with_cursor rev-parse --show-toplevel)"
+```
+
+将 `/path/to/codex_with_cursor` 换成实际路径；在仓库根目录执行时可用 `$(git rev-parse --show-toplevel)`。
+
+**C. 回退：先 clone 再注册本地路径：**
 
 ```bash
 git clone https://github.com/0377/codex_with_cursor.git
-codex plugin install /path/to/codex_with_cursor --scope user
+codex plugin marketplace add /path/to/codex_with_cursor
 ```
 
-检查 `~/.codex/config.toml` 是否包含并启用：
+**安装插件（首次或重装）：**
+
+```bash
+codex plugin marketplace list
+codex plugin add codex-with-cursor@<MARKETPLACE>
+```
+
+`<MARKETPLACE>` 取 `marketplace list` 输出中的名称（通常为 `codex-with-cursor`，以列表为准）。若名称与仓库目录不同，不要猜测，必须先 `list`。
+
+检查 `~/.codex/config.toml` 是否包含并启用（插件 ID 可能带 `@<MARKETPLACE>` 后缀，以实际配置为准）：
 
 ```toml
-[plugins."codex-with-cursor"]
+[plugins."codex-with-cursor@codex-with-cursor"]
+enabled = true
 ```
 
 安装后如未即时生效，提示用户重载插件或重启 Codex。
+
+### 3b. 更新已安装的插件
+
+用户要求「更新」或远程仓库已有新版本时：
+
+```bash
+codex plugin marketplace list
+codex plugin marketplace upgrade <MARKETPLACE>
+codex plugin list
+```
+
+说明：
+
+- `marketplace upgrade` 仅适用于通过 **Git** 注册的 marketplace（如 `0377/codex_with_cursor`）。本地路径注册的 marketplace 不支持 `upgrade`；开发时请重新 `marketplace add` 本地路径，或改用 Git 源做更新验证。
+- `marketplace upgrade` 会刷新 Git snapshot；更新后应**重启 Codex 或重载插件**。
+- 若 `plugin list` 中的 VERSION 未变或行为仍是旧版，执行重装：
+
+```bash
+codex plugin remove codex-with-cursor@<MARKETPLACE>
+codex plugin add codex-with-cursor@<MARKETPLACE>
+```
+
+- 发布方 bump `.codex-plugin/plugin.json` 的 `version` 后，缓存路径可能变为 `.../codex-with-cursor/<新版本>/...`；更新前请确认远程已 push 对应 commit/tag。
 
 ### 4. 启用 Codex hooks 半硬门
 
@@ -238,7 +276,10 @@ dry-run 成功后应看到 `config_<RunId>.json`、`status_<RunId>.json`、`prom
 最终回复至少说明：
 
 - 安装/更新是否成功。
-- 是否清理了旧 `codex-with-cc` / marketplace 残留。
+- 是否清理了旧 `codex-with-cc` / aiskyhub 残留。
+- 使用的 marketplace 名称（来自 `codex plugin marketplace list`）。
+- 更新时是否执行了 `marketplace upgrade`（以及是否做了 remove + add 重装）。
+- `codex plugin list` 中的插件 VERSION（若可读取）。
 - `codex-with-cursor` 是否已安装并启用。
 - 是否运行了 runtime 自检与 dry-run。
 - 是否需要重载插件或重启 Codex。

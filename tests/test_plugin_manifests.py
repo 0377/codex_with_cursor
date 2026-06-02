@@ -18,7 +18,7 @@ def test_plugin_manifest_and_docs_contract() -> None:
 
     codex_plugin = json.loads(codex_plugin_path.read_text(encoding="utf-8"))
     assert codex_plugin["name"] == "codex-with-cursor"
-    assert codex_plugin["version"] == "1.1.0"
+    assert codex_plugin["version"] == "1.2.0"
     assert codex_plugin["skills"] == "./skills/"
     assert codex_plugin["hooks"] == "./hooks/hooks.json"
     assert (repo / "hooks" / "hooks.json").exists()
@@ -42,6 +42,8 @@ def test_plugin_manifest_and_docs_contract() -> None:
     assert compat_install_phrase not in readme_text
 
     assert "marketplace-only" not in ai_install_text
-    assert "仓库直装" in ai_install_text
+    assert "codex plugin marketplace add" in ai_install_text
+    assert "codex plugin marketplace upgrade" in ai_install_text
+    assert (repo / ".agents" / "plugins" / "marketplace.json").exists()
     assert legacy_scope_phrase not in ai_install_text
     assert "codex-with-cursor" in ai_install_text
