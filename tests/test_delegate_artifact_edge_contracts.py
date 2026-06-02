@@ -25,6 +25,35 @@ from codex_with_cursor_runtime.reports import text_has_required_report_headings
 from codex_with_cursor_runtime.sessions import task_fingerprint
 
 
+RESEARCHER_REPORT = "\n".join(
+    (
+        "Status",
+        "DONE",
+        "",
+        "Role",
+        "researcher",
+        "",
+        "Summary",
+        "Fake Cursor Agent completed.",
+        "",
+        "Changed Files",
+        "None",
+        "",
+        "Verification",
+        "- fake verification passed",
+        "",
+        "Findings",
+        "- fake delegate execution",
+        "",
+        "Final Result",
+        "DONE",
+        "",
+        "Risks Or Follow-ups",
+        "None",
+    )
+)
+
+
 REPORT = "\n".join(
     (
         "Status",
@@ -69,6 +98,45 @@ def make_fake_agent_bin(root: Path) -> Path:
         separators=(",", ":"),
     )
     result = json.dumps({"type": "result", "subtype": "success"}, separators=(",", ":"))
+    if os.name == "nt":
+        (fake_bin / "agent.cmd").write_text(
+            FAKE_AGENT_LIST_MODELS_CMD
+            + "more > nul\n"
+            + f"echo {assistant}\n"
+            + f"echo {result}\n"
+            + "exit /b 0\n",
+            encoding="utf-8",
+        )
+    else:
+        script = fake_bin / "agent"
+        script.write_text(
+            "#!/bin/sh\n"
+            f"{FAKE_AGENT_LIST_MODELS_SH}"
+            "cat >/dev/null\n"
+            f"printf '%s\\n' '{assistant}'\n"
+            f"printf '%s\\n' '{result}'\n",
+            encoding="utf-8",
+        )
+        script.chmod(script.stat().st_mode | stat.S_IEXEC)
+    return fake_bin
+
+
+def make_preamble_result_fake_agent_bin(root: Path) -> Path:
+    fake_bin = root / "fake-preamble-result-agent-bin"
+    fake_bin.mkdir(parents=True, exist_ok=True)
+    preamble = "正在执行任务进度说明。\n"
+    full_result = preamble + RESEARCHER_REPORT
+    assistant = json.dumps(
+        {
+            "type": "assistant",
+            "message": {"role": "assistant", "content": [{"type": "text", "text": RESEARCHER_REPORT}]},
+        },
+        separators=(",", ":"),
+    )
+    result = json.dumps(
+        {"type": "result", "subtype": "success", "result": full_result},
+        separators=(",", ":"),
+    )
     if os.name == "nt":
         (fake_bin / "agent.cmd").write_text(
             FAKE_AGENT_LIST_MODELS_CMD
@@ -440,6 +508,32 @@ def test_structured_output_file_allows_unstructured_final_summary() -> None:
         assert verified.returncode == 0, verified.stdout + verified.stderr
         output = (artifact_root / f"cursor_{run_id}.md").read_text(encoding="utf-8")
         assert output == REPORT
+
+
+def test_delegate_accepts_compliant_report_embedded_in_result_transcript() -> None:
+    with tempfile.TemporaryDirectory(prefix="codex_with_cc_preamble_result_") as tmp:
+        root = Path(tmp)
+        artifact_root = root / "artifacts"
+        fake_bin = make_preamble_result_fake_agent_bin(root)
+        result = run_delegate(
+            "preamble result transcript",
+            ["-BypassPermissions", "-MaxRetryCount", "0"],
+            artifact_root,
+            {"PATH": f"{fake_bin}{os.pathsep}{os.environ.get('PATH', '')}"},
+            role="researcher",
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+        run_id = run_id_from_output(result.stdout)
+        status = json.loads((artifact_root / f"status_{run_id}.json").read_text(encoding="utf-8"))
+        assert status["status"] == "completed"
+        assert not status.get("outputWasNormalized")
+        output = (artifact_root / f"cursor_{run_id}.md").read_text(encoding="utf-8")
+        assert text_has_required_report_headings(output)
+        assert output.splitlines()[0] == "Status"
+        assert "UNSTRUCTURED_SUCCESS_REJECTED" not in status.get("failureSummary", "")
+
+        verified = verify_artifacts(run_id, artifact_root)
+        assert verified.returncode == 0, verified.stdout + verified.stderr
 
 
 def test_task_fingerprint_uses_full_task_text() -> None:

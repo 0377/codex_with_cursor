@@ -8,7 +8,7 @@ from typing import Any, Iterable
 
 from .common import DelegateError
 
-from .reports import text_has_required_report_headings
+from .reports import extract_structured_delegate_report, text_has_required_report_headings
 
 
 def resolve_agent_executable() -> str | None:
@@ -19,6 +19,33 @@ def resolve_agent_executable() -> str | None:
     not guaranteed to work on it.
     """
     return shutil.which("agent")
+
+
+def apply_delegate_report_text(state: dict[str, Any], text: str) -> None:
+    trimmed = text.strip()
+    if not trimmed:
+        return
+    state["sawAssistantText"] = True
+    state["assistantTexts"].append(trimmed)
+    current = str(state.get("finalText") or "").strip()
+    if text_has_required_report_headings(trimmed):
+        state["capturedFinalResultHeading"] = True
+        state["finalText"] = trimmed
+        return
+    extracted = extract_structured_delegate_report(trimmed)
+    if extracted:
+        state["capturedFinalResultHeading"] = True
+        state["finalText"] = extracted
+        return
+    if current and text_has_required_report_headings(current):
+        return
+    if current:
+        extracted_current = extract_structured_delegate_report(current)
+        if extracted_current:
+            state["capturedFinalResultHeading"] = True
+            state["finalText"] = extracted_current
+            return
+    state["finalText"] = trimmed
 
 
 def text_blocks(content: Any) -> list[str]:
@@ -60,11 +87,7 @@ def update_stream_capture(record: dict[str, Any], state: dict[str, Any]) -> list
         if texts:
             text = "\n".join(texts).strip()
             if text:
-                state["sawAssistantText"] = True
-                if text_has_required_report_headings(text):
-                    state["capturedFinalResultHeading"] = True
-                state["assistantTexts"].append(text)
-                state["finalText"] = text
+                apply_delegate_report_text(state, text)
         if record.get("session_id"):
             state["cursorSessionId"] = str(record["session_id"])
     elif record_type == "result":
@@ -78,11 +101,7 @@ def update_stream_capture(record: dict[str, Any], state: dict[str, Any]) -> list
             state["sawResultSuccess"] = True
         result_text = str(record.get("result", "")).strip()
         if result_text:
-            state["sawAssistantText"] = True
-            if text_has_required_report_headings(result_text):
-                state["capturedFinalResultHeading"] = True
-            state["assistantTexts"].append(result_text)
-            state["finalText"] = result_text
+            apply_delegate_report_text(state, result_text)
         if record.get("session_id"):
             state["cursorSessionId"] = str(record["session_id"])
         trace_lines.append(line)

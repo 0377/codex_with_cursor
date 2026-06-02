@@ -43,6 +43,7 @@ Codex 主线程 -> Codex spawn_agent 子线程 -> 已安装插件中的 delegate
 - 旧式 inline `-Task`、旧式 `-Mode`、隐式 session key fallback 都不保留。
 - reviewer 必须额外传 `-ReviewForTaskId` 和 `-ReviewKind spec` 或 `-ReviewKind quality`。
 - worker 报告必须使用 `Status / Role / Summary / Changed Files / Verification / Findings / Final Result / Risks Or Follow-ups`，并且 `Status` 与 `Final Result` 必须一致。
+- 若 Cursor 在 `Status` 前输出进度句，或 `stream-json` 的 `result` 字段把整段 transcript 写在报告前，包装器会从最终文本中提取**最后一个**合规报告块再验收；这与「任务未执行」不同，勿把 `UNSTRUCTURED_SUCCESS_REJECTED` 与零产出混为一谈。
 - 单次运行使用 `verify_delegate_run` 或 `verify_delegate_artifacts` 验证；整条工作流使用 `verify_delegate_workflow` 验证。
 - implementer workflow 必须有 accepted `spec` reviewer、accepted `quality` reviewer 和 accepted `final-verifier`；非 dry-run 的 `DONE` 报告必须覆盖所有 `-Tests` 命令和结果；并行 implementer 的 `-Scope` 不能重叠。
 

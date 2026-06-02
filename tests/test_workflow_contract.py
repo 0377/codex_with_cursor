@@ -20,7 +20,14 @@ HOOK_SCRIPT = REPO / "hooks" / "subagent-gate-hook.mjs"
 sys.path.insert(0, str(SCRIPTS))
 
 from codex_with_cursor_runtime.common import ARTIFACT_SCHEMA_VERSION, REPORT_STATUS_VALUES, WORKER_ROLES
-from codex_with_cursor_runtime.reports import parse_report_final_result, parse_report_role, parse_report_status, text_has_required_report_headings
+from codex_with_cursor_runtime.reports import (
+    extract_structured_delegate_report,
+    parse_report_final_result,
+    parse_report_role,
+    parse_report_status,
+    resolve_delegate_report_text,
+    text_has_required_report_headings,
+)
 from codex_with_cursor_runtime.workflow import workflow_path
 
 
@@ -111,6 +118,17 @@ def test_report_contract_accepts_statuses_and_roles() -> None:
     assert parse_report_status(mismatched) == "DONE"
     assert parse_report_final_result(mismatched) == "FAIL"
     assert parse_report_role(mismatched) == "reviewer"
+
+
+def test_extract_structured_delegate_report_finds_trailing_block() -> None:
+    report = workflow_report(status="DONE", role="researcher")
+    combined = "正在执行任务。\n正在撰写报告。\n" + report
+    assert not text_has_required_report_headings(combined)
+    extracted = extract_structured_delegate_report(combined)
+    assert text_has_required_report_headings(extracted)
+    assert parse_report_status(extracted) == "DONE"
+    assert parse_report_role(extracted) == "researcher"
+    assert resolve_delegate_report_text(combined, [report]) == report
 
 
 def test_delegate_dry_run_writes_workflow_artifacts_and_verifies_them() -> None:

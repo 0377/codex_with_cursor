@@ -17,7 +17,8 @@ Read this file before using the workflow in this repository. Treat `contract.jso
 9. Workers must follow the TaskFile contract: Goal, Allowed Scope, Forbidden Actions, Acceptance Criteria, Verification, and Report Requirements.
 10. Task files with empty sections, obvious placeholders, or incomplete Report Requirements are invalid; use `validate_delegate_task.*` before dispatch when preparing non-trivial work.
 11. Workers must finish with the exact report headings and concrete verification evidence.
-12. Implementer workflows require accepted `spec` and `quality` reviewer runs plus an accepted `final-verifier` run before workflow acceptance.
+12. If Cursor emits progress text before `Status`, or the stream-json `result` field prepends a full-session transcript, the delegate wrapper extracts the last compliant report block from the final text before acceptance. That recovery is not the same as a zero-output run; do not treat `UNSTRUCTURED_SUCCESS_REJECTED` as proof that no work was done when deliverable files exist.
+13. Implementer workflows require accepted `spec` and `quality` reviewer runs plus an accepted `final-verifier` run before workflow acceptance.
 
 ## Trigger Rule
 Any user mention of child-agent, subagent, sub-agent, child-thread, subthread, delegation, worker-execution, or Chinese equivalents such as 子代理、子线程、多代理、委派、派工、执行层 is a workflow trigger. When triggered, the main Codex thread must use this custom delegation workflow and must not satisfy the request with the default Codex subagent flow, a host-provided agent shortcut, direct `agent` execution, or direct main-thread execution of `delegate_to_cursor.*`.

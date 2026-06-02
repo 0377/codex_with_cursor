@@ -128,17 +128,59 @@ def path_has_required_report_headings(path: Path | str | None) -> bool:
 
 
 
-def convert_unstructured_final_text(text: str | None) -> str:
+def extract_structured_delegate_report(text: str | None) -> str:
+    if not text or not text.strip():
+        return ""
+    sanitized = _text_outside_fenced_blocks(text)
+    status_pattern = re.compile(r"(?m)^\s*Status\s*$")
+    matches = list(status_pattern.finditer(sanitized))
+    if not matches:
+        return ""
+    best = ""
+    for index, match in enumerate(matches):
+        start = match.start()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(sanitized)
+        candidate = sanitized[start:end].strip()
+        if text_has_required_report_headings(candidate):
+            best = candidate
+    return best
+
+
+
+def resolve_delegate_report_text(final_text: str, assistant_texts: list[str] | None = None) -> str:
+    trimmed = (final_text or "").strip()
+    if text_has_required_report_headings(trimmed):
+        return trimmed
+    extracted = extract_structured_delegate_report(trimmed)
+    if extracted:
+        return extracted
+    for text in reversed(assistant_texts or []):
+        candidate = (text or "").strip()
+        if not candidate:
+            continue
+        if text_has_required_report_headings(candidate):
+            return candidate
+        extracted = extract_structured_delegate_report(candidate)
+        if extracted:
+            return extracted
+    return trimmed
+
+
+
+def convert_unstructured_final_text(text: str | None, *, role: str = "reviewer") -> str:
     trimmed = (text or "").strip()
     if not trimmed:
         return ""
     if text_has_required_report_headings(trimmed):
         return trimmed
+    role_value = role.strip().lower()
+    if role_value not in WORKER_ROLES:
+        role_value = "reviewer"
     return f"""Status
 FAIL
 
 Role
-reviewer
+{role_value}
 
 Summary
 Cursor Agent did not satisfy the delegate report contract. Treat this run as failed even though the Cursor Agent CLI process exited with code 0.
@@ -169,8 +211,11 @@ def get_output_resolution(
     exit_code: int,
     saw_result_success: bool,
     captured_final_result_heading: bool,
+    *,
+    role: str = "reviewer",
 ) -> dict[str, Any]:
-    final_has = text_has_required_report_headings(final_text)
+    resolved = resolve_delegate_report_text(final_text)
+    final_has = text_has_required_report_headings(resolved)
     existing_structured = path_has_required_report_headings(output_path)
     normalized = (
         exit_code == 0
@@ -179,7 +224,12 @@ def get_output_resolution(
         and not existing_structured
         and bool(final_text.strip())
     )
-    persisted = convert_unstructured_final_text(final_text) if normalized else final_text
+    if normalized:
+        persisted = convert_unstructured_final_text(final_text, role=role)
+    elif final_has:
+        persisted = resolved
+    else:
+        persisted = resolved if resolved.strip() else final_text
     persisted_has = text_has_required_report_headings(persisted)
     should_persist = persisted_has or (not existing_structured and bool(final_text.strip()))
     delegate_succeeded = exit_code == 0 and saw_result_success and (final_has or existing_structured)

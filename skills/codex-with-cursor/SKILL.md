@@ -113,3 +113,5 @@ final-verifier
 ```
 
 Verification must list commands actually run and their outcomes. A `DONE` report without concrete verification evidence is invalid. If verification is blocked, the worker must explain the blocker and whether it is unrelated to the delegated change.
+
+If Cursor prepends progress text or a full transcript before the report, the delegate wrapper extracts the last compliant `Status`..`Risks Or Follow-ups` block before marking the run failed. Prefer returning a report that starts on line 1 with `Status` anyway.

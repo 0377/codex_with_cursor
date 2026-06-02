@@ -27,7 +27,13 @@ from .io_utils import read_text, test_path_writable, write_json, write_text
 from .locks import FileLock, acquire_file_lock
 from .paths import project_artifact_root, repo_root, user_artifact_root, workflow_relative_path, workflow_root
 from .prompts import build_prompt
-from .reports import build_report_repair_prompt, get_output_resolution, path_has_required_report_headings
+from .reports import (
+    build_report_repair_prompt,
+    get_output_resolution,
+    path_has_required_report_headings,
+    resolve_delegate_report_text,
+    text_has_required_report_headings,
+)
 from .sessions import SessionLease, acquire_session_lease, effective_session_key, normalize_delegate_list, release_session_lease, reset_session_lease_for_fresh_session, safe_session_key, task_fingerprint
 from .task_contract import validate_task_file_contract
 from .workflow import normalize_role, safe_task_id, update_workflow_record, workflow_path
@@ -612,8 +618,9 @@ def run_delegate(ns: argparse.Namespace) -> int:
                 final_text = str(capture_state.get("finalText") or "")
                 if not final_text.strip() and capture_state["assistantTexts"]:
                     final_text = str(capture_state["assistantTexts"][-1]).strip()
+                final_text = resolve_delegate_report_text(final_text, capture_state.get("assistantTexts") or [])
                 output_file_has_report = path_has_required_report_headings(output_path)
-                captured_report = bool(capture_state["capturedFinalResultHeading"]) or output_file_has_report
+                captured_report = text_has_required_report_headings(final_text) or output_file_has_report
                 decision = retry_decision(
                     attempt_raw_lines,
                     lease.resume,
@@ -717,7 +724,8 @@ Risks Or Follow-ups
                     output_path,
                     exit_code,
                     bool(capture_state["sawResultSuccess"]),
-                    bool(capture_state["capturedFinalResultHeading"]),
+                    captured_report,
+                    role=role,
                 )
                 if output_resolution["existingStructuredOutput"] or output_resolution["finalTextHasFinalResult"]:
                     attempt_record["capturedFinalResult"] = True
@@ -740,7 +748,7 @@ Risks Or Follow-ups
                 break
 
         if output_resolution is None:
-            output_resolution = get_output_resolution(final_text, output_path, exit_code, False, False)
+            output_resolution = get_output_resolution(final_text, output_path, exit_code, False, False, role=role)
         if output_resolution["shouldPersistFinalText"]:
             write_text(output_path, str(output_resolution["persistedFinalText"]))
         elif not output_path.exists():
